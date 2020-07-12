@@ -1,3 +1,3 @@
 #!/bin/sh
 
-java -jar /solution/app/Main.jar "$@"
+java -jar /solution/app/Main.jar "$@" || echo "run error code: $?"

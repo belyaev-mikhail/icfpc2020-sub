@@ -70,7 +70,7 @@ data class Cons(val car: Symbol, val cdr: Symbol): Symbol() {
         }
     }
 
-    override fun toString(): String = iterator().asSequence().joinToString()
+    override fun toString(): String = iterator().asSequence().joinToString(prefix = "(", postfix = ")")
 }
 
 data class Ap(val f: Symbol, val arg: Symbol): Symbol()

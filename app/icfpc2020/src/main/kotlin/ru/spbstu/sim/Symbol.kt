@@ -5,6 +5,7 @@ import kotlin.reflect.KProperty
 
 sealed class Symbol {
     open fun subst(mapping: Map<Symbol, Symbol>) = this
+    open fun eval(): Symbol = this
 }
 
 data class Num(val number: Long): Symbol() {
@@ -66,6 +67,8 @@ data class Cons(val car: Symbol, val cdr: Symbol): Symbol() {
     override fun subst(mapping: Map<Symbol, Symbol>): Symbol =
             Cons(car.subst(mapping), cdr.subst(mapping))
 
+    override fun eval(): Symbol = copy(car.eval(), cdr.eval())
+
     fun iterator(): Iterator<Symbol> = kotlin.sequences.iterator<Symbol> {
         yield(car)
         when(cdr) {
@@ -81,6 +84,15 @@ data class Cons(val car: Symbol, val cdr: Symbol): Symbol() {
 data class Ap(val f: Symbol, val arg: Symbol): Symbol() {
     override fun subst(mapping: Map<Symbol, Symbol>): Symbol =
             app(f.subst(mapping), arg.subst(mapping))
+
+    override fun eval(): Symbol {
+        val ef = f.eval()
+        val earg = arg.eval()
+        return when (ef) {
+            is Fun -> ef.interp(earg).eval()
+            else -> Ap(ef, earg)
+        }
+    }
 }
 
 data class Var(val name: String): Symbol() {
@@ -108,7 +120,7 @@ data class Binding(val lhs: Symbol, val rhs: Symbol): Symbol()
 
 fun app(f: Symbol, arg: Symbol): Symbol {
     return when(f) {
-        is Fun -> f.interp(arg)
+        //is Fun -> f.interp(arg)
         else -> Ap(f, arg)
     }
 }
@@ -169,6 +181,7 @@ fun consListOf(args: Iterator<Symbol>): Symbol = when {
     else -> Cons(args.next(), consListOf(args))
 }
 fun consListOf(collection: Collection<Symbol>) = consListOf(collection.iterator())
+fun consListOf(vararg symbols: Symbol) = consListOf(symbols.iterator())
 
 val vec = cons
 
@@ -207,7 +220,14 @@ val c by Fun { f, x, y -> app(f(y), x) }
 val b by Fun { x0, x1, x2 -> x0(x1(x2)) }
 
 fun main() {
-    val p = app(vec(Num(3)), Num(1))
-    val ps = consListOf(listOf(p))
+    val ps =
+        consListOf(
+            vec(Num(3))(Num(1)),
+            vec(Num(4))(Num(2))
+        )
     println(draw(ps))
+    println(draw(ps).eval())
+
+    println(s(i)(i)(i)(Num(2)))
+    println((s(i)(i)(i)(Num(2))).eval())
 }

@@ -160,3 +160,14 @@ val multipledraw: Symbol by Fun {
     else -> TODO()
 }
 }
+
+val if0 by Fun { x -> when(x) {
+    Num(0) -> t
+    Num(1) -> f
+    else -> TODO()
+} }
+
+val i by Fun { x -> x }
+val k = f
+val c by Fun { f, x, y -> app(app(f, y), x) }
+val b by Fun { x0, x1, x2 -> app(x0, app(x1, x2)) }

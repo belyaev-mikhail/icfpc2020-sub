@@ -80,9 +80,13 @@ data class Var(val name: String): Symbol()
 
 data class Picture(val ones: Set<Pair<Long, Long>>): Symbol() {
     override fun toString(): String {
-        val canvas = List(18) { StringBuilder("_".repeat(18)) }
+        val width = ones.map { it.first }.max()?.plus(2) ?: 5
+        val height = ones.map { it.second }.max()?.plus(2) ?: 5
+        val canvas = List(height.toInt()) {
+            StringBuilder("□".repeat(width.toInt()))
+        }
         for((x, y) in ones) {
-            canvas[x.toInt()][y.toInt()] = '*'
+            canvas[y.toInt()][x.toInt()] = '■'
         }
         return canvas.joinToString("\n")
     }
@@ -184,7 +188,7 @@ val c by Fun { f, x, y -> app(f(y), x) }
 val b by Fun { x0, x1, x2 -> x0(x1(x2)) }
 
 fun main() {
-    val p = app(vec(Num(1)), Num(1))
+    val p = app(vec(Num(3)), Num(1))
     val ps = consListOf(listOf(p))
     println(draw(ps))
 }

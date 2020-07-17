@@ -92,6 +92,7 @@ data class Ap(val f: Symbol, val arg: Symbol): Symbol() {
         val earg = arg.eval(mapping)
         return when (ef) {
             is Fun -> ef.interp(earg).eval(mapping)
+            is Cons -> earg(ef.car)(ef.cdr).eval(mapping)
             else -> Ap(ef, earg)
         }
     }

@@ -4,7 +4,6 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import ru.spbstu.antlr4.LanguageLexer
 import ru.spbstu.antlr4.LanguageParser
-import java.io.File
 
 fun parse(file: String): List<Symbol> {
     val lexer = LanguageLexer(CharStreams.fromString(file))

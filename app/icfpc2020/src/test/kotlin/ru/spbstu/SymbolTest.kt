@@ -80,4 +80,19 @@ class SymbolTest {
             |.   . 
             |.    .""".trimMargin()).command)
     }
+
+    @Test
+    fun `test custom creation`() {
+        assertEquals("(", Symbols.custom("  .| ..|...| ..|  .").command)
+        assertEquals(")", Symbols.custom(".  |.. |...|.. |.  ").command)
+        assertEquals("|", Symbols.custom("..|..|..|..|..").command)
+        assertEquals("universe", Symbols.custom("""
+            |  ...  
+            |     . 
+            | ...  .
+            |. . . .
+            |.  ... 
+            | .     
+            |  ...  """.trimMargin()).command)
+    }
 }

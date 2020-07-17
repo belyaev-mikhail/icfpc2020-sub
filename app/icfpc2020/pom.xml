@@ -119,4 +119,12 @@
         </plugins>
     </build>
 
+    <repositories>
+        <repository>
+            <id>bintray-vorpal-research-kotlin-maven</id>
+            <name>vorpal-research-kotlin-maven</name>
+            <url>https://dl.bintray.com/vorpal-research/kotlin-maven</url>
+        </repository>
+    </repositories>
+
 </project>

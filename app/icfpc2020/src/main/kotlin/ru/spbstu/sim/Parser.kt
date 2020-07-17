@@ -83,8 +83,3 @@ fun parseCombinator(combinator: LanguageParser.CombinatorContext): Symbol = when
     combinator.s_comb_rule() != null -> s
     else -> TODO()
 }
-
-fun main() {
-    val txt = File("C:\\Users\\napst\\IdeaProjects\\icfpc2020-sub\\app\\icfpc2020\\data\\galaxy.txt").readText()
-    parse(txt)
-}

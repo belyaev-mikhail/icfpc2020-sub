@@ -11,8 +11,8 @@ internal class SymbolTest {
                 vec(Num(3))(Num(1)),
                 vec(Num(4))(Num(2))
             )
-        assertEquals(Picture(setOf(Pair(3L, 1L), Pair(4L, 2L))), draw(ps).eval())
+        assertEquals(Picture(setOf(Pair(3L, 1L), Pair(4L, 2L))), draw(ps).eval(mapOf()))
 
-        assertEquals(Num(2), (s(i)(i)(i)(Num(2))).eval())
+        assertEquals(Num(2), (s(i)(i)(i)(Num(2))).eval(mapOf()))
     }
 }

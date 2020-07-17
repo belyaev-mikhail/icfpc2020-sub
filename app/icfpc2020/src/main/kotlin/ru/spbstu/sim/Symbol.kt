@@ -6,7 +6,7 @@ import kotlin.reflect.KProperty
 
 sealed class Symbol {
     open fun subst(mapping: Map<Symbol, Symbol>) = this
-    open fun eval(): Symbol = this
+    open fun eval(mapping: Map<Symbol, Symbol>): Symbol = this
 }
 
 data class Num(val number: Long): Symbol() {
@@ -68,7 +68,8 @@ data class Cons(val car: Symbol, val cdr: Symbol): Symbol() {
     override fun subst(mapping: Map<Symbol, Symbol>): Symbol =
             Cons(car.subst(mapping), cdr.subst(mapping))
 
-    override fun eval(): Symbol = copy(car.eval(), cdr.eval())
+    override fun eval(mapping: Map<Symbol, Symbol>): Symbol =
+        copy(car.eval(mapping), cdr.eval(mapping))
 
     fun iterator(): Iterator<Symbol> = kotlin.sequences.iterator<Symbol> {
         yield(car)
@@ -86,11 +87,11 @@ data class Ap(val f: Symbol, val arg: Symbol): Symbol() {
     override fun subst(mapping: Map<Symbol, Symbol>): Symbol =
             app(f.subst(mapping), arg.subst(mapping))
 
-    override fun eval(): Symbol {
-        val ef = f.eval()
-        val earg = arg.eval()
+    override fun eval(mapping: Map<Symbol, Symbol>): Symbol {
+        val ef = f.eval(mapping)
+        val earg = arg.eval(mapping)
         return when (ef) {
-            is Fun -> ef.interp(earg).eval()
+            is Fun -> ef.interp(earg).eval(mapping)
             else -> Ap(ef, earg)
         }
     }
@@ -98,6 +99,11 @@ data class Ap(val f: Symbol, val arg: Symbol): Symbol() {
 
 data class Var(val name: String): Symbol() {
     override fun subst(mapping: Map<Symbol, Symbol>): Symbol {
+        if(this in mapping) return mapping.getValue(this)
+        else return this
+    }
+
+    override fun eval(mapping: Map<Symbol, Symbol>): Symbol {
         if(this in mapping) return mapping.getValue(this)
         else return this
     }
@@ -145,8 +151,8 @@ val lt by Fun { a, b ->
     if(a.number < b.number) t else f
 }
 val eq by Fun { a, b ->
-    check(a is Num)
-    check(b is Num)
+    check(a is Num) { a }
+    check(b is Num) { b }
     if(a.number == b.number) t else f
 }
 val neg by Fun { a -> -a }
@@ -228,8 +234,25 @@ fun eval(bindings: List<Symbol>) {
     }
     for(binding in bindings) {
         check(binding is Binding)
-
+        println("" + binding.lhs + " :=" + binding.rhs)
     }
+    val galaxy = bindings.last()
+    galaxy as Binding
+    println(galaxy)
+    val task = galaxy.rhs(Nil)(vec(Num(0))(Num(0)))
+    var answer = task.eval(bindingContext)
+    println(answer)
+    answer = answer.eval(bindingContext)
+    println(answer)
+    answer = answer.eval(bindingContext)
+    println(answer)
+    answer = answer.eval(bindingContext)
+    println(answer)
+    answer = answer.eval(bindingContext)
+    println(answer)
+    answer = answer.eval(bindingContext)
+    println(answer)
+
 }
 
 fun main() {
@@ -239,10 +262,10 @@ fun main() {
             vec(Num(4))(Num(2))
         )
     println(draw(ps))
-    println(draw(ps).eval())
+    println(draw(ps).eval(mapOf()))
 
     println(s(i)(i)(i)(Num(2)))
-    println((s(i)(i)(i)(Num(2))).eval())
+    println((s(i)(i)(i)(Num(2))).eval(mapOf()))
 
     val aa = parse(File("app/icfpc2020/data/galaxy.txt").readText())
     eval(aa)

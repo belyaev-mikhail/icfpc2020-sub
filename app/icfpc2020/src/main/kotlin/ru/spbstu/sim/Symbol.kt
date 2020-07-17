@@ -65,19 +65,28 @@ data class Cons(val car: Symbol, val cdr: Symbol): Symbol() {
     fun iterator(): Iterator<Symbol> = kotlin.sequences.iterator<Symbol> {
         yield(car)
         when(cdr) {
-            Nil -> yield(Nil)
             is Cons -> yieldAll(cdr.iterator())
+            else -> yield(cdr)
         }
     }
 
-    override fun toString(): String = iterator().asSequence().joinToString()
+    override fun toString(): String =
+        iterator().asSequence().joinToString(prefix = "(", postfix = ")")
 }
 
 data class Ap(val f: Symbol, val arg: Symbol): Symbol()
 
 data class Var(val name: String): Symbol()
 
-data class Picture(val ones: Set<Pair<Long, Long>>): Symbol()
+data class Picture(val ones: Set<Pair<Long, Long>>): Symbol() {
+    override fun toString(): String {
+        val canvas = List(18) { StringBuilder("_".repeat(18)) }
+        for((x, y) in ones) {
+            canvas[x.toInt()][y.toInt()] = '*'
+        }
+        return canvas.joinToString("\n")
+    }
+}
 
 fun app(f: Symbol, arg: Symbol): Symbol {
     return when(f) {
@@ -86,13 +95,15 @@ fun app(f: Symbol, arg: Symbol): Symbol {
     }
 }
 
+operator fun Symbol.invoke(that: Symbol) = app(this, that)
+
 val inc by Fun { it -> it + Num(1) }
 val dec by Fun { it -> it - Num(1) }
 val add by Fun { a , b -> a + b }
 val mul by Fun { a, b -> a * b }
 val div by Fun { a, b -> a / b }
 
-val s by Fun { a, b, c -> app(app(a, c), app(b, c)) }
+val s by Fun { a, b, c -> app(a(c), b(c)) }
 
 val t by Fun { a, b -> a }
 val f = app(s, t)
@@ -112,13 +123,13 @@ val cons by Fun { h, t -> Cons(h, t) }
 val car by Fun { lst ->
     when(lst) {
         is Cons -> lst.car
-        else -> app(lst, t)
+        else -> lst(t)
     }
 }
 val cdr by Fun { lst ->
     when(lst) {
         is Cons -> lst.cdr
-        else -> app(lst, f)
+        else -> lst(f)
     }
 }
 val nil = Nil
@@ -140,8 +151,8 @@ val vec = cons
 
 val draw by Fun { lst -> when(lst) {
     is Nil -> Picture(setOf())
-    is Cons -> lst.iterator().asSequence().mapTo(mutableSetOf()) { cell ->
-        check(cell is Cons)
+    is Cons -> lst.iterator().asSequence().mapNotNullTo(mutableSetOf<Pair<Long, Long>>()) { cell ->
+        if(cell !is Cons) return@mapNotNullTo null
         val (x, y) = cell
         check(x is Num)
         check(y is Num)
@@ -169,5 +180,11 @@ val if0 by Fun { x -> when(x) {
 
 val i by Fun { x -> x }
 val k = f
-val c by Fun { f, x, y -> app(app(f, y), x) }
-val b by Fun { x0, x1, x2 -> app(x0, app(x1, x2)) }
+val c by Fun { f, x, y -> app(f(y), x) }
+val b by Fun { x0, x1, x2 -> x0(x1(x2)) }
+
+fun main() {
+    val p = app(vec(Num(1)), Num(1))
+    val ps = consListOf(listOf(p))
+    println(draw(ps))
+}

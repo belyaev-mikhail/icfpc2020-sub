@@ -54,8 +54,9 @@ class Protocol {
     fun encode(msg: Symbol): String {
         when (msg) {
             is Num -> {
-                if (msg.number == 0L) {
-                    return "010"
+                when {
+                    msg.number == 0L -> return "010"
+                    msg.number == 1L -> return "01100001"
                 }
 
                 val res = StringBuilder()
@@ -76,10 +77,10 @@ class Protocol {
                     4 * ((width / 4) + 1)
                 }
 
-                res.append("1".repeat(encodedWidth))
+                res.append("1".repeat(encodedWidth / 4))
                 res.append("0")
 
-                res.append(num.toString(2).padStart(encodedWidth - width, '0'))
+                res.append(num.toString(2).padStart(encodedWidth, '0'))
 
                 return res.toString()
             }

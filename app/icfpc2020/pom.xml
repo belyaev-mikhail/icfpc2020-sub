@@ -57,6 +57,12 @@
             <version>2.1.0</version>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <id>bintray-vorpal-research-kotlin-maven</id>
+            <url>https://dl.bintray.com/vorpal-research/kotlin-maven</url>
+        </repository>
+    </repositories>
 
     <build>
         <sourceDirectory>src/main/kotlin</sourceDirectory>

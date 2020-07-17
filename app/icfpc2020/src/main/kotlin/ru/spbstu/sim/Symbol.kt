@@ -88,6 +88,8 @@ data class Picture(val ones: Set<Pair<Long, Long>>): Symbol() {
     }
 }
 
+data class Binding(val lhs: Symbol, val rhs: Symbol): Symbol()
+
 fun app(f: Symbol, arg: Symbol): Symbol {
     return when(f) {
         is Fun -> f.interp(arg)

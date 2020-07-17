@@ -80,6 +80,9 @@
                 <groupId>org.jetbrains.kotlin</groupId>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <version>${kotlin.version}</version>
+                <configuration>
+                    <apiVersion>1.3</apiVersion>
+                </configuration>
                 <executions>
                     <execution>
                         <id>compile</id>

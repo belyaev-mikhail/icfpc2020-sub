@@ -61,7 +61,7 @@
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr4-runtime</artifactId>
-            <version>4.8-1</version>
+            <version>4.8</version>
         </dependency>
     </dependencies>
     <repositories>
@@ -117,22 +117,28 @@
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
-                <version>4.8-1</version>
+                <version>4.8</version>
                 <executions>
                     <execution>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>antlr4</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <outputDirectory>
-                        ${project.basedir}/target/generated-sources/antlr4/
-                    </outputDirectory>
+                    <sourceDirectory>src/main/antlr4</sourceDirectory>
+                    <includes>
+                        <include>Language.g4</include>
+                    </includes>
                     <arguments>
                         <argument>-package</argument>
-                        <argument>ru.spbstu.parser</argument>
+                        <argument>ru.spbstu.antlr4</argument>
                     </arguments>
+                    <outputDirectory>${project.build.directory}/generated-sources/antlr4/ru/spbstu/antlr4</outputDirectory>
+                    <visitor>true</visitor>
+                    <listener>true</listener>
+
                 </configuration>
             </plugin>
             <plugin>

@@ -2,8 +2,8 @@ package ru.spbstu.sim
 
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import ru.spbstu.parser.LanguageLexer
-import ru.spbstu.parser.LanguageParser
+import ru.spbstu.antlr4.LanguageLexer
+import ru.spbstu.antlr4.LanguageParser
 
 fun parse(file: String) {
     val lexer = LanguageLexer(CharStreams.fromString(file))

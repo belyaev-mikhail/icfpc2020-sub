@@ -57,7 +57,7 @@ fun parseFunction(function: LanguageParser.FunctionContext): Symbol = when {
     function.dem_rule() != null -> TODO("demodulate")
     function.mod_rule() != null -> TODO("modulate")
 
-    function.eq_rule() != null -> TODO("equality")
+    function.eq_rule() != null -> eq
 
     function.lt_rule() != null -> lt
     function.neg_rule() != null -> neg

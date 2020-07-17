@@ -1,6 +1,7 @@
 package ru.spbstu.sim
 
 import ru.spbstu.pow
+import java.io.File
 import kotlin.reflect.KProperty
 
 sealed class Symbol {
@@ -172,7 +173,7 @@ val isnil by Fun { lst ->
     when(lst) {
         is Nil -> t
         is Cons -> f
-        else -> TODO()
+        else -> throw IllegalStateException("$lst")
     }
 }
 
@@ -219,6 +220,18 @@ val k = f
 val c by Fun { f, x, y -> app(f(y), x) }
 val b by Fun { x0, x1, x2 -> x0(x1(x2)) }
 
+fun eval(bindings: List<Symbol>) {
+    val bindingContext = mutableMapOf<Symbol, Symbol>()
+    for(binding in bindings) {
+        check(binding is Binding)
+        bindingContext[binding.lhs] = binding.rhs
+    }
+    for(binding in bindings) {
+        check(binding is Binding)
+
+    }
+}
+
 fun main() {
     val ps =
         consListOf(
@@ -230,4 +243,8 @@ fun main() {
 
     println(s(i)(i)(i)(Num(2)))
     println((s(i)(i)(i)(Num(2))).eval())
+
+    val aa = parse(File("app/icfpc2020/data/galaxy.txt").readText())
+    eval(aa)
+    println(aa)
 }

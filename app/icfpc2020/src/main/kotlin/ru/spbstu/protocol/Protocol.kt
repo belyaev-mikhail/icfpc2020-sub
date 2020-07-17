@@ -1,9 +1,9 @@
 package ru.spbstu.protocol
 
-import ru.spbstu.data.Cons
-import ru.spbstu.data.Datum
-import ru.spbstu.data.Nil
-import ru.spbstu.data.Num
+import ru.spbstu.sim.Cons
+import ru.spbstu.sim.Nil
+import ru.spbstu.sim.Num
+import ru.spbstu.sim.Symbol
 import kotlin.math.ceil
 import kotlin.math.log2
 
@@ -15,7 +15,7 @@ class Protocol {
         currIndex = 0
     }
 
-    fun decode(msg: String): Datum {
+    fun decode(msg: String): Symbol {
         val header = msg.substring(currIndex, currIndex + 2)
 
         currIndex += 2
@@ -32,9 +32,9 @@ class Protocol {
                 }
                 currIndex++
 
-                if (width == 0) return Num(0)
+                if (width == 0) return Num(0L)
 
-                val num = msg.substring(currIndex, currIndex + 4 * width).toInt(2)
+                val num = msg.substring(currIndex, currIndex + 4 * width).toLong(2)
 
                 currIndex += 4 * width
 
@@ -51,21 +51,21 @@ class Protocol {
         TODO("SHOULD NOT HAPPEN")
     }
 
-    fun encode(msg: Datum): String {
+    fun encode(msg: Symbol): String {
         when (msg) {
             is Num -> {
-                if (msg.value == 0) {
+                if (msg.number == 0L) {
                     return "010"
                 }
 
                 val res = StringBuilder()
 
-                val num = if (msg.value > 0) {
+                val num = if (msg.number > 0) {
                     res.append("01")
-                    msg.value
+                    msg.number
                 } else {
                     res.append("10")
-                    -msg.value
+                    -msg.number
                 }
 
                 val width = ceil(log2(num.toFloat())).toInt()
@@ -88,13 +88,16 @@ class Protocol {
 
                 res.append("11")
 
-                res.append(encode(msg.head))
-                res.append(encode(msg.tail))
+                res.append(encode(msg.car))
+                res.append(encode(msg.cdr))
 
                 return res.toString()
             }
             is Nil -> {
                 return "00"
+            }
+            else -> {
+                TODO("Cannot convert $msg")
             }
         }
     }

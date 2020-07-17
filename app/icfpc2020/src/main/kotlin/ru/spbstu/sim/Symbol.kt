@@ -52,7 +52,7 @@ object Nil : Symbol() {
 }
 
 data class Cons(val car: Symbol, val cdr: Symbol): Symbol() {
-    fun iterator() = kotlin.sequences.iterator {
+    fun iterator(): Iterator<Symbol> = iterator {
         yield(car)
         when(cdr) {
             Nil -> yield(Nil)

@@ -4,6 +4,7 @@ import ru.spbstu.pow
 import kotlin.reflect.KProperty
 
 sealed class Symbol {
+    open fun subst(mapping: Map<Symbol, Symbol>) = this
 }
 
 data class Num(val number: Long): Symbol() {
@@ -62,6 +63,9 @@ object Nil : Symbol() {
 }
 
 data class Cons(val car: Symbol, val cdr: Symbol): Symbol() {
+    override fun subst(mapping: Map<Symbol, Symbol>): Symbol =
+            Cons(car.subst(mapping), cdr.subst(mapping))
+
     fun iterator(): Iterator<Symbol> = kotlin.sequences.iterator<Symbol> {
         yield(car)
         when(cdr) {
@@ -74,9 +78,17 @@ data class Cons(val car: Symbol, val cdr: Symbol): Symbol() {
         iterator().asSequence().joinToString(prefix = "(", postfix = ")")
 }
 
-data class Ap(val f: Symbol, val arg: Symbol): Symbol()
+data class Ap(val f: Symbol, val arg: Symbol): Symbol() {
+    override fun subst(mapping: Map<Symbol, Symbol>): Symbol =
+            app(f.subst(mapping), arg.subst(mapping))
+}
 
-data class Var(val name: String): Symbol()
+data class Var(val name: String): Symbol() {
+    override fun subst(mapping: Map<Symbol, Symbol>): Symbol {
+        if(this in mapping) return mapping.getValue(this)
+        else return this
+    }
+}
 
 data class Picture(val ones: Set<Pair<Long, Long>>): Symbol() {
     override fun toString(): String {
@@ -109,7 +121,7 @@ val add by Fun { a , b -> a + b }
 val mul by Fun { a, b -> a * b }
 val div by Fun { a, b -> a / b }
 
-val s by Fun { a, b, c -> app(a(c), b(c)) }
+val s by Fun { a, b, c -> (a(c))(b(c)) }
 
 val t by Fun { a, b -> a }
 val f = app(s, t)
@@ -118,6 +130,11 @@ val lt by Fun { a, b ->
     check(a is Num)
     check(b is Num)
     if(a.number < b.number) t else f
+}
+val eq by Fun { a, b ->
+    check(a is Num)
+    check(b is Num)
+    if(a.number == b.number) t else f
 }
 val neg by Fun { a -> -a }
 val pwr2 by Fun { a ->

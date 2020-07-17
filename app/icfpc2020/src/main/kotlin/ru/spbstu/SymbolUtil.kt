@@ -70,8 +70,11 @@ fun Matrix.toFunction(): Symbol.Function? {
     return Symbol.Function(this, code, ":$code")
 }
 
-fun Long.pow(power: Long): Long {
-    return (0 until power).fold(1L) { acc, _ -> acc * this }
+fun Long.pow(power: Long): Long = when {
+    power == 0L -> 1
+    power == 1L -> this
+    power % 2 == 1L -> this * pow(power - 1)
+    else -> pow(power / 2).let { it * it }
 }
 
 fun Matrix.toCode(): Long {

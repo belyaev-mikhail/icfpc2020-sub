@@ -58,8 +58,12 @@ expression
     | number
     | nil
     | function
-    | ap expression expression
+    | application
     | bools
+    ;
+
+application
+    : ap expression expression
     ;
 
 function

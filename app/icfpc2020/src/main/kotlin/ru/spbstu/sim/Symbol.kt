@@ -3,10 +3,12 @@ package ru.spbstu.sim
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import ru.spbstu.draw.GalaxyDraw
 import ru.spbstu.pow
 import ru.spbstu.protocol.Protocol
 import java.io.File
 import kotlin.reflect.KProperty
+import java.util.ArrayDeque
 
 sealed class Symbol {
     open fun subst(mapping: Map<Symbol, Symbol>) = this
@@ -67,13 +69,24 @@ data class Fun(val name: String?, val interp: EvaluationContext.(Symbol) -> Symb
     constructor(interp: EvaluationContext.(Symbol, Symbol, Symbol, Symbol) -> Symbol) :
             this({ a -> Fun { b -> Fun { c -> Fun { d -> interp(a, b, c, d) } } } })
 
-    override fun toString(): String = name ?: interp.toString()
+    companion object FunNaming {
+        var counter = 0
+        fun freshVar() = Var("$${++counter}")
+    }
+    override fun toString(): String = name ?: run {
+        with(EvaluationContext(mutableMapOf(), dryRun = true)) {
+            val v = freshVar()
+            val app = interp(v)
+            "$v -> $app"
+        }
+    }
 
     operator fun getValue(self: Any?, prop: KProperty<*>) = copy(name = prop.name)
 }
 
-class EvaluationContext(val mapping: MutableMap<Symbol, Symbol>) {
+class EvaluationContext(val mapping: MutableMap<Symbol, Symbol>, val dryRun: Boolean = false) {
     fun strict(sym: Symbol): Symbol {
+        if(dryRun) return sym
         val cached = mapping[sym] ?: sym
 
         val res = cached.exhaustiveEval(mapping)
@@ -137,6 +150,8 @@ data class Var(val name: String) : Symbol() {
             return ret
         } else return this
     }
+
+    override fun toString(): String = name
 }
 
 data class Picture(val ones: Set<Pair<Long, Long>>) : Symbol() {
@@ -308,6 +323,9 @@ fun eval(bindings: List<Symbol>) {
     galaxy as Binding
     println(galaxy)
 
+    val states = ArrayDeque<Pair<Symbol, Pair<Long, Long>>>()
+    var isGalaxyComing = false
+
     for (x in -3L..3L) {
         for (y in -3L..3L) {
             println("=== $x $y ===")
@@ -327,54 +345,77 @@ fun eval(bindings: List<Symbol>) {
                 val (newState, pics) = interact(bc, galaxy.lhs, state, vec(Num(curX))(Num(curY)))
                 val answer = newState.exhaustiveEval(bc)
 
+                states.addFirst(state to (curX to curY))
                 state = answer
 
-                val img = sequenceOf(pics.exhaustiveEval(bc))
+                if (car(state).exhaustiveEval(bc) == Num(2)) {
+                    isGalaxyComing = true
+                    println("STATE INCOMING!!!")
+                    println(Protocol().encode(state))
+                }
+
+                val imgs = sequenceOf(pics.exhaustiveEval(bc))
                     .flatten()
                     .filterIsInstance<Picture>()
-                    .fold(Picture(setOf())) {
-                        acc, e -> Picture(acc.ones + e.ones)
+                    .toList()
+
+                if (isGalaxyComing) {
+                    val current = GalaxyDraw.interact(imgs)
+                    if (current == null) {
+                        states.pop()
+                        val a = states.pop()
+                        state = a.first
+                        curX = a.second.first
+                        curY = a.second.second
+                    } else {
+                        curX = current.first.toLong()
+                        curY = current.second.toLong()
+                        println("$curX -> $curY")
                     }
-
-                if (img.ones.isNotEmpty()) {
-                    val minX = img.ones.minBy { it.first }!!.first
-                    val minY = img.ones.minBy { it.second }!!.second
-
-                    val maxX = img.ones.maxBy { it.first }!!.first
-                    val maxY = img.ones.maxBy { it.second }!!.second
-
-                    val lb = minX to minY
-                    val rt = maxX to maxY
-
-                    bb = lb to rt
-
-                    println("BB: (${lb.first}, ${lb.second}) -> (${rt.first}, ${rt.second})")
-
-                    println(img)
-                }
-
-                val mode = car(state).exhaustiveEval(bc)
-
-                if (mode == Num(1)) {
+                } else {
+                    val img = imgs.fold(Picture(setOf())) {
+                            acc, e -> Picture(acc.ones + e.ones)
+                    }
                     if (img.ones.isNotEmpty()) {
-                        val minX = img.ones.minBy { it.first }!!
-                        val minY = img.ones.minBy { it.second }!!
+                        val minX = img.ones.minBy { it.first }!!.first
+                        val minY = img.ones.minBy { it.second }!!.second
 
-                        curX = minY.first
-                        curY = minX.second
+                        val maxX = img.ones.maxBy { it.first }!!.first
+                        val maxY = img.ones.maxBy { it.second }!!.second
+
+                        val lb = minX to minY
+                        val rt = maxX to maxY
+
+                        bb = lb to rt
+
+                        println("BB: (${lb.first}, ${lb.second}) -> (${rt.first}, ${rt.second})")
+
+                        println(img)
                     }
-                }
 
-                if (mode == Num(2)) {
-                    curX = 0
-                    curY = 0
-                }
+                    val mode = car(state).exhaustiveEval(bc)
 
-                if (mode == Num(5)) {
-                    curX = curX + 2
-                    if (curX !in bb.first.first..bb.second.first) {
-                        curX = bb.first.first
-                        curY = curY + 2
+                    if (mode == Num(1)) {
+                        if (img.ones.isNotEmpty()) {
+                            val minX = img.ones.minBy { it.first }!!
+                            val minY = img.ones.minBy { it.second }!!
+
+                            curX = minY.first
+                            curY = minX.second
+                        }
+                    }
+
+                    if (mode == Num(2)) {
+                        curX = 0
+                        curY = 0
+                    }
+
+                    if (mode == Num(5)) {
+                        curX = curX + 2
+                        if (curX !in bb.first.first..bb.second.first) {
+                            curX = bb.first.first
+                            curY = curY + 2
+                        }
                     }
                 }
             }

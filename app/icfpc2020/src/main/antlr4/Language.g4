@@ -4,6 +4,18 @@ Colon
     : ':'
     ;
 
+Comma
+    : ','
+    ;
+
+OpenPar
+    : '('
+    ;
+
+ClosePar
+    : ')'
+    ;
+
 Equality
     : '='
     ;
@@ -57,6 +69,7 @@ expression
     : identifier
     | number
     | nil
+    | list_expression
     | function
     | application
     | bools
@@ -76,27 +89,24 @@ function
     | div_rule
     | eq_rule
     | lt_rule
-    | dem_rule
-    | mod_rule
+    | interactions
     | combinator
     | isnil_rule
-
+    | power_of_2_rule
+    | if0_rule
     ;
 
-ap
-    : 'ap'
-    ;
+ap  : 'ap'  ;
 
-cons_rule
-    : 'cons'
-    ;
+cons_rule  : 'cons' ;
+vec_rule: 'vec';
+nil : 'nil' ;
+car_rule: 'car';
+cdr_rule:'cdr';
+isnil_rule: 'isnil';
 
-nil
-    : 'nil'
-    ;
 
 neg_rule: 'neg' ;
-
 inc_rule: 'inc';
 dec_rule: 'dec';
 add_rule: 'add';
@@ -104,19 +114,52 @@ mul_rule: 'mul';
 div_rule: 'div';
 eq_rule: 'eq';
 lt_rule : 'lt';
+power_of_2_rule: 'pwr2';
+
+if0_rule: 'if0';
 
 dem_rule :'dem';
 mod_rule : 'mod';
-car_rule: 'car';
-cdr_rule:'cdr';
-
 send_rule: 'send';
-isnil_rule: 'isnil';
+interact_rule : 'interact';
+
+draw_rule : 'draw';
+checkerboard_rule : 'checkerboard';
+multipledraw_rule : 'multipledraw';
+
+interactions
+    : send_rule
+    | mod_rule
+    | dem_rule
+    | interact_rule
+    | draw_rule
+    | checkerboard_rule
+    | multipledraw_rule
+    ;
+
+list_expression
+    : empty_list
+    | empty_list_with_comma
+    | non_empty_list
+    ;
+
+empty_list
+    : OpenPar ClosePar
+    ;
+
+empty_list_with_comma
+    : OpenPar Comma ClosePar
+    ;
+
+non_empty_list
+    : OpenPar expression (Comma expression)* ClosePar
+    ;
 
 list_rule
     : cons_rule
     | car_rule
     | cdr_rule
+    | vec_rule
     ;
 combinator
     : s_comb_rule

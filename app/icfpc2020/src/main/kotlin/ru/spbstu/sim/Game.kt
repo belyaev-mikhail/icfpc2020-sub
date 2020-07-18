@@ -46,6 +46,7 @@ data class GameResponse(
 ) {
     companion object {
         fun valueOf(symbol: Symbol): GameResponse {
+            return GameResponse(0, GameStage.NOT_STARTED, nil, nil)
             var cons = symbol as Cons
             val status = (cons.car as Num).number
             if (status != 1L) TODO("Incorrect game response")

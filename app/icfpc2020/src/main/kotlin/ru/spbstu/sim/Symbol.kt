@@ -1,5 +1,8 @@
 package ru.spbstu.sim
 
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import ru.spbstu.pow
 import ru.spbstu.protocol.Protocol
 import java.io.File
@@ -138,14 +141,14 @@ data class Var(val name: String) : Symbol() {
 
 data class Picture(val ones: Set<Pair<Long, Long>>) : Symbol() {
     override fun toString(): String {
-        val minWidth = ones.map { it.first }.min()?.minus(2) ?: 0
-        val minHeight = ones.map { it.second }.min()?.minus(2) ?: 0
+        val minWidth = ones.map { it.first }.min()?.minus(0) ?: 0
+        val minHeight = ones.map { it.second }.min()?.minus(0) ?: 0
 
-        val maxWidth = ones.map { it.first }.max()?.plus(2) ?: 5
-        val maxHeight = ones.map { it.second }.max()?.plus(2) ?: 5
+        val maxWidth = ones.map { it.first }.max()?.plus(0) ?: 5
+        val maxHeight = ones.map { it.second }.max()?.plus(0) ?: 5
 
-        val width = maxWidth - minWidth
-        val height = maxHeight - minHeight
+        val width = maxWidth - minWidth + 1
+        val height = maxHeight - minHeight + 1
 
         val canvas = List(height.toInt()) {
             StringBuilder("□".repeat(width.toInt()))
@@ -234,6 +237,7 @@ val vec = cons
 
 fun Sequence<Symbol>.flatten(): Sequence<Symbol> {
     return flatMap { cell ->
+        if (cell is Nil) return@flatMap sequenceOf<Symbol>()
         if (cell !is Cons) return@flatMap sequenceOf<Symbol>(cell)
         val (x, y) = cell
 
@@ -308,36 +312,31 @@ fun eval(bindings: List<Symbol>) {
         for (y in -3L..3L) {
             println("=== $x $y ===")
 
-            var state: Symbol = nil
+            var state: Symbol = nil // Protocol().decode("110110001011110110000111101000010011010110000")
             var curX = x
             var curY = y
 
+            var bb = (0L to 0L) to (0L to 0L)
+
             while (true) {
+
+                println("Coords: $curX -> $curY")
+
                 val bc = bindingContext.toMutableMap()
 
                 val (newState, pics) = interact(bc, galaxy.lhs, state, vec(Num(curX))(Num(curY)))
                 val answer = newState.exhaustiveEval(bc)
 
-                // if (answer == state) break
-
-                println(answer)
-
                 state = answer
 
-                if (car(state).exhaustiveEval(bc) == Num(2)) {
-                    println("STATE INCOMING!!!")
-                    println(Protocol().encode(state))
-                }
-
-                val imgs = sequenceOf(pics.exhaustiveEval(bc))
+                val img = sequenceOf(pics.exhaustiveEval(bc))
                     .flatten()
                     .filterIsInstance<Picture>()
+                    .fold(Picture(setOf())) {
+                        acc, e -> Picture(acc.ones + e.ones)
+                    }
 
-                imgs.forEach { println(it) }
-
-                for (img in imgs) {
-                    if (img.ones.size < 1) continue
-
+                if (img.ones.isNotEmpty()) {
                     val minX = img.ones.minBy { it.first }!!
                     val minY = img.ones.minBy { it.second }!!
 
@@ -347,10 +346,43 @@ fun eval(bindings: List<Symbol>) {
                     val lb = minX.first to minY.second
                     val rt = maxX.first to maxY.second
 
-                    curX = minY.first
-                    curY = minX.second
+                    bb = lb to rt
 
-                    println("$curX -> $curY")
+                    println("BB: (${lb.first}, ${lb.second}) -> (${rt.first}, ${rt.second})")
+
+                    println(img)
+                }
+
+                val mode = car(state).exhaustiveEval(bc)
+
+                if (mode == Num(1)) {
+                    if (img.ones.isNotEmpty()) {
+                        val minX = img.ones.minBy { it.first }!!
+                        val minY = img.ones.minBy { it.second }!!
+
+                        curX = minY.first
+                        curY = minX.second
+                    }
+                }
+
+                if (mode == Num(2)) {
+                    curX = 0
+                    curY = 0
+
+                    continue
+                }
+
+                if (mode == Num(5)) {
+                    if (curX == 0L) {
+                        curX = bb.first.first
+                        curY = bb.first.second
+                    } else {
+                        curX = curX + 1
+                        if (curX !in bb.first.first..bb.second.first) {
+                            curX = bb.first.first
+                            curY = curY + 1
+                        }
+                    }
                 }
             }
         }
@@ -369,23 +401,40 @@ fun Symbol.exhaustiveEval(mapping: MutableMap<Symbol, Symbol>): Symbol {
 fun f38(bindingContext: MutableMap<Symbol, Symbol>, protocol: Symbol, res: Symbol): Pair<Symbol, Symbol> {
     val flag = car(res).exhaustiveEval(bindingContext)
     val newState = car(cdr(res)).exhaustiveEval(bindingContext)
-    val data = cdr(cdr(res)).exhaustiveEval(bindingContext)
+    val data = car(cdr(cdr(res))).exhaustiveEval(bindingContext)
 
-    //println(flag)
-    //println(newState)
-    //println(data)
+    println(flag)
+    println(newState)
+    println(Protocol().encode(newState))
+    println(data)
+
+    val p = Protocol()
+    val modem = p.decode(p.encode(newState))
 
     if (flag == Num(0)) {
-        val p = Protocol()
-        val modem = p.decode(p.encode(newState))
         val pics = multipledraw(data)
 
         return modem to pics
+    } else {
+        val playerKey = "5b38d34226a14d73878985ecdc25f79a"
+        val serverUrl = "https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=$playerKey"
+
+        val client = OkHttpClient()
+
+        val flattenedData = consListOf(sequenceOf(data).flatten().iterator())
+        println(Protocol().encode(flattenedData))
+
+        val request = Request.Builder().url(serverUrl).post(Protocol().encode(flattenedData).toRequestBody()).build()
+        val response = client.newCall(request).execute()
+        val status = response.code
+        val body = response.body ?: TODO("FUCK")
+
+        val res = body.string()
+        println(res)
+        println(Protocol().decode(res))
+
+        return interact(bindingContext, protocol, modem, Protocol().decode(res))
     }
-
-    TODO("FUCK")
-
-    return nil to nil
 }
 
 fun interact(

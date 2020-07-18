@@ -84,11 +84,17 @@ class Game {
     fun loop() {
         val join = join()
         var state = send(join)
+        System.err.println("Join")
+        System.err.println("$state")
         val start = start(state)
         state = send(start)
+        System.err.println("Start")
+        System.err.println("$state")
         while (state.stage != GameStage.FINISHED) {
             val cmd = command(state)
             state = send(cmd)
+            System.err.println("Command")
+            System.err.println("$state")
         }
     }
 

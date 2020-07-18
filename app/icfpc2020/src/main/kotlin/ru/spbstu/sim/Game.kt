@@ -66,6 +66,7 @@ private fun List<Symbol>.asListSymbol(): Symbol = fold(nil as Symbol) { acc, sym
 class Game {
     private val client = OkHttpClient()
     private fun send(request: GameRequest): GameResponse {
+        System.err.println("$request")
         val requestData = request.modulate()
         val httpRequest = Request.Builder().url(GSMS.serverUrl).post(requestData.toRequestBody()).build()
         val response = client.newCall(httpRequest).execute()
@@ -74,6 +75,8 @@ class Game {
         val body = response.body ?: TODO("FUCK")
         val res = body.string()
         val parsed = Protocol().decode(res)
+        System.err.println("Response")
+        System.err.println(parsed)
         return GameResponse.valueOf(parsed)
     }
 

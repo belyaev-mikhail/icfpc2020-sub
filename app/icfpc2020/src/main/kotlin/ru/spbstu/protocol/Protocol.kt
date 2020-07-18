@@ -56,8 +56,6 @@ class Protocol {
             is Num -> {
                 when {
                     msg.number == 0L -> return "010"
-                    msg.number == 1L -> return "01100001"
-                    msg.number == -1L -> return "10100001"
                 }
 
                 val res = StringBuilder()
@@ -73,15 +71,15 @@ class Protocol {
                 val width = ceil(log2(num.toFloat())).toInt()
 
                 val encodedWidth = if (width % 4 == 0) {
-                    width
+                    (width + 1)
                 } else {
-                    4 * ((width / 4) + 1)
+                    ((width / 4) + 1)
                 }
 
-                res.append("1".repeat(encodedWidth / 4))
+                res.append("1".repeat(encodedWidth))
                 res.append("0")
 
-                res.append(num.toString(2).padStart(encodedWidth, '0'))
+                res.append(num.toString(2).padStart(4 * encodedWidth, '0'))
 
                 return res.toString()
             }

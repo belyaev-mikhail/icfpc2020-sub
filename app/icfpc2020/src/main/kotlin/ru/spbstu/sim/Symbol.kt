@@ -445,6 +445,11 @@ fun f38(bindingContext: MutableMap<Symbol, Symbol>, protocol: Symbol, res: Symbo
     val p = Protocol()
     val modem = p.decode(p.encode(newState))
 
+    if (modem != newState) {
+        println("New state: $newState")
+        println("Modem: $modem")
+    }
+
     if (flag == Num(0)) {
         val pics = multipledraw(data)
 

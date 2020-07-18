@@ -411,126 +411,52 @@ val i by Fun { x -> x }
 val k = f
 val c by Fun { f, x, y -> strict(f)(y)(x) }
 val b by Fun { x0, x1, x2 -> strict(x0)(strict(x1)(x2)) }
-val bindingContext = mutableMapOf<Symbol, Symbol>()
-fun eval(bindings: List<Symbol>) {
 
+fun eval(bindings: List<Symbol>, initialState: Symbol, initX: Long, initY: Long) {
+    val bindingContext = mutableMapOf<Symbol, Symbol>()
 
     for (binding in bindings) {
         check(binding is Binding)
-        if(binding.lhs !in bindingContext)
+        if (binding.lhs !in bindingContext)
             bindingContext[binding.lhs] = binding.rhs
     }
-
-//    for (binding in bindings) {
-//        check(binding is Binding)
-//        System.err.print("${binding.lhs} := ")
-//        val res = binding.rhs.eval(bindingContext)
-//        System.err.println("$res")
-//        bindingContext[binding.lhs] = res
-//    }
 
     val galaxy = bindings.last()
     galaxy as Binding
     println(galaxy)
 
     val states = ArrayDeque<Pair<Symbol, Pair<Long, Long>>>()
-    var isGalaxyComing = false
+    var state: Symbol = initialState
+    var curX = initX
+    var curY = initY
 
-    for (x in -3L..3L) {
-        for (y in -3L..3L) {
-            println("=== $x $y ===")
+    val galaxyDraw = GalaxyDraw()
+    while (true) {
+        println("Coords: $curX -> $curY")
 
-            var state: Symbol = Protocol().decode("11011001011111011000101101011001100110011001100110111111111111111111000000000000000000000000000000000000000000000000000001100011111110101001101101001110000")
-            var curX = x
-            var curY = y
+        val (newState, pics) = interact(bindingContext, galaxy.lhs, state, vec(Num(curX))(Num(curY)))
+        val answer = newState.exhaustiveEval(bindingContext)
 
-            isGalaxyComing = true
+        states.addFirst(state to (curX to curY))
+        state = answer
 
-            var bb = (-3L to -3L) to (3L to 3L)
+        println(Protocol().encode(state))
 
-            while (true) {
+        val images = sequenceOf(pics.exhaustiveEval(bindingContext))
+            .flatten()
+            .filterIsInstance<Picture>()
+            .toList()
 
-                println("Coords: $curX -> $curY")
-
-                val bc = bindingContext //.toMutableMap()
-
-                val (newState, pics) = interact(bc, galaxy.lhs, state, vec(Num(curX))(Num(curY)))
-                val answer = newState.exhaustiveEval(bc)
-
-                states.addFirst(state to (curX to curY))
-                state = answer
-
-                if (car(state).exhaustiveEval(bc) == Num(2)) {
-                    isGalaxyComing = true
-                    println("STATE INCOMING!!!")
-                    println(Protocol().encode(state))
-                }
-
-                val imgs = sequenceOf(pics.exhaustiveEval(bc))
-                    .flatten()
-                    .filterIsInstance<Picture>()
-                    .toList()
-
-                if (isGalaxyComing) {
-                    val current = GalaxyDraw.interact(imgs)
-                    if (current == null) {
-                        states.pop()
-                        val a = states.pop()
-                        state = a.first
-                        curX = a.second.first
-                        curY = a.second.second
-                    } else {
-                        curX = current.first.toLong()
-                        curY = current.second.toLong()
-                        println("$curX -> $curY")
-                    }
-                } else {
-                    val img = imgs.fold(Picture(setOf())) {
-                            acc, e -> Picture(acc.ones + e.ones)
-                    }
-                    if (img.ones.isNotEmpty()) {
-                        val minX = img.ones.minBy { it.first }!!.first
-                        val minY = img.ones.minBy { it.second }!!.second
-
-                        val maxX = img.ones.maxBy { it.first }!!.first
-                        val maxY = img.ones.maxBy { it.second }!!.second
-
-                        val lb = minX to minY
-                        val rt = maxX to maxY
-
-                        bb = lb to rt
-
-                        println("BB: (${lb.first}, ${lb.second}) -> (${rt.first}, ${rt.second})")
-
-                        println(img)
-                    }
-
-                    val mode = car(state).exhaustiveEval(bc)
-
-                    if (mode == Num(1)) {
-                        if (img.ones.isNotEmpty()) {
-                            val minX = img.ones.minBy { it.first }!!
-                            val minY = img.ones.minBy { it.second }!!
-
-                            curX = minY.first
-                            curY = minX.second
-                        }
-                    }
-
-                    if (mode == Num(2)) {
-                        curX = 0
-                        curY = 0
-                    }
-
-                    if (mode == Num(5)) {
-                        curX = curX + 2
-                        if (curX !in bb.first.first..bb.second.first) {
-                            curX = bb.first.first
-                            curY = curY + 2
-                        }
-                    }
-                }
-            }
+        val current = galaxyDraw.interact(images)
+        if (current == null) {
+            states.pop()
+            val a = states.pop()
+            state = a.first
+            curX = a.second.first
+            curY = a.second.second
+        } else {
+            curX = current.first.toLong()
+            curY = current.second.toLong()
         }
     }
 }
@@ -573,7 +499,8 @@ fun f38(bindingContext: MutableMap<Symbol, Symbol>, protocol: Symbol, res: Symbo
         val flattenedData = consListOf(sequenceOf(data).flatten().iterator())
         println(Protocol().encode(flattenedData))
 
-        val request = Request.Builder().url("${GSMS.serverUrl}").post(Protocol().encode(flattenedData).toRequestBody()).build()
+        val request =
+            Request.Builder().url(GSMS.serverUrl).post(Protocol().encode(flattenedData).toRequestBody()).build()
         val response = client.newCall(request).execute()
         val status = response.code
         val body = response.body ?: TODO("FUCK")
@@ -597,6 +524,9 @@ fun interact(
     return f38(bindingContext, protocol, protocol(state)(point).exhaustiveEval(bindingContext))
 }
 
+fun encode(msg: Symbol) = Protocol().encode(msg)
+fun decode(msg: String) = Protocol().decode(msg)
+
 fun main() {
     val ps =
         consListOf(
@@ -614,5 +544,10 @@ fun main() {
     GSMS.serverUrl = "https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=${GSMS.playerKey}"
 
     val aa = parse(File("data/galaxy.txt").readText())
-    eval(aa)
+//    val state = nil
+    val state = decode("1101100001111101111110000000000000000010110011010110000")
+//    val state = decode("11011001011111011000101101011001100110011001100110111111111111111111000000000000000000000000000000000000000000000000000001100011111110101001101101001110000"),
+//    val (x, y) = -3L to -3L
+    val (x, y) = 1L to 4L
+    eval(aa, state, x, y)
 }

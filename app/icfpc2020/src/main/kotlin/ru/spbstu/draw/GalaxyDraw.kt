@@ -190,7 +190,7 @@ private class GalaxyPane(val statusBar: StatusBar) : JPanel() {
 
 private class TranslatorPane(private val statusBar: StatusBar) : JPanel() {
     fun add(part: List<Pair<List<Pair<Int, Int>>, Color>>) {
-        val rect = GalaxyDraw.boundingBox(part.flatMap { it.first })
+        val rect = boundingBox(part.flatMap { it.first })
         val layers = part.map { (it, c) -> it.map { (x, y) -> x - rect.x to y - rect.y } to c }
         val points = layers.flatMap { it.first }
         val data = List(rect.height) { y -> List(rect.width) { x -> x to y in points } }
@@ -307,7 +307,7 @@ private class GalaxyFrame : JFrame("Galaxy") {
     }
 }
 
-object GalaxyDraw {
+class GalaxyDraw {
     private val galaxyFrame = GalaxyFrame()
 
     private val colors: Sequence<Color>
@@ -336,14 +336,6 @@ object GalaxyDraw {
         return interact(box, layers)
     }
 
-    fun boundingBox(points: List<Pair<Int, Int>>): Rectangle {
-        val left = points.map { it.first }.min()!!
-        val top = points.map { it.second }.min()!!
-        val right = points.map { it.first }.max()!! + 1
-        val bottom = points.map { it.second }.max()!! + 1
-        return Rectangle(left, top, right - left, bottom - top)
-    }
-
     private fun interact(rect: Rectangle, layers: List<Pair<List<Pair<Int, Int>>, Color>>): Pair<Int, Int>? {
         SwingUtilities.invokeLater {
             galaxyFrame.statusBar.isAvailable = true
@@ -357,4 +349,12 @@ object GalaxyDraw {
             galaxyFrame.statusBar.isAvailable = false
         }
     }
+}
+
+fun boundingBox(points: List<Pair<Int, Int>>): Rectangle {
+    val left = points.map { it.first }.min()!!
+    val top = points.map { it.second }.min()!!
+    val right = points.map { it.first }.max()!! + 1
+    val bottom = points.map { it.second }.max()!! + 1
+    return Rectangle(left, top, right - left, bottom - top)
 }

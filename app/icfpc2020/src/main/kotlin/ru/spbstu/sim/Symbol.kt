@@ -3,6 +3,7 @@ package ru.spbstu.sim
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import ru.spbstu.draw.GalaxyDraw
 import ru.spbstu.pow
 import ru.spbstu.protocol.Protocol
 import java.io.File

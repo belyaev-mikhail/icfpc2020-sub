@@ -71,8 +71,10 @@ data class Fun(val name: String?, val interp: EvaluationContext.(Symbol) -> Symb
 
 class EvaluationContext(val mapping: MutableMap<Symbol, Symbol>) {
     fun strict(sym: Symbol): Symbol {
-        val res = sym.exhaustiveEval(mapping)
-        if (sym is Var) mapping[sym] = res
+        val cached = mapping[sym] ?: sym
+
+        val res = cached.exhaustiveEval(mapping)
+        mapping[sym] = res
         return res
     }
 }
@@ -291,9 +293,13 @@ fun eval(bindings: List<Symbol>) {
     var state: Symbol = nil
 
     while (true) {
-        var task = interact(bindingContext, galaxy.lhs, state, vec(Num(0))(Num(0)))
-        val answer = task.exhaustiveEval(bindingContext)
+        val bc = bindingContext.toMutableMap()
+
+        var task = interact(bc, galaxy.lhs, state, vec(Num(0))(Num(0)))
+        val answer = task.exhaustiveEval(bc)
         println(answer)
+
+        if (answer == state) break
 
         state = answer
     }

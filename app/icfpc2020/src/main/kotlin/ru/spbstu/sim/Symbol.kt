@@ -322,6 +322,8 @@ fun eval(bindings: List<Symbol>) {
     galaxy as Binding
     println(galaxy)
 
+    var isGalaxyComing = false
+
     for (x in -3L..3L) {
         for (y in -3L..3L) {
             println("=== $x $y ===")
@@ -343,52 +345,64 @@ fun eval(bindings: List<Symbol>) {
 
                 state = answer
 
+                if (car(state).exhaustiveEval(bc) == Num(2)) {
+                    isGalaxyComing = true
+                    println("STATE INCOMING!!!")
+                    println(Protocol().encode(state))
+                }
+
                 val img = sequenceOf(pics.exhaustiveEval(bc))
                     .flatten()
                     .filterIsInstance<Picture>()
                     .fold(Picture(setOf())) {
                         acc, e -> Picture(acc.ones + e.ones)
                     }
-
-                if (img.ones.isNotEmpty()) {
-                    val minX = img.ones.minBy { it.first }!!.first
-                    val minY = img.ones.minBy { it.second }!!.second
-
-                    val maxX = img.ones.maxBy { it.first }!!.first
-                    val maxY = img.ones.maxBy { it.second }!!.second
-
-                    val lb = minX to minY
-                    val rt = maxX to maxY
-
-                    bb = lb to rt
-
-                    println("BB: (${lb.first}, ${lb.second}) -> (${rt.first}, ${rt.second})")
-
-                    println(img)
-                }
-
-                val mode = car(state).exhaustiveEval(bc)
-
-                if (mode == Num(1)) {
+                if (isGalaxyComing) {
+                    val (currentX, currentY) = GalaxyDraw.interact(img)
+                    curX = currentX.toLong()
+                    curY = currentY.toLong()
+                    println("$curX -> $curY")
+                } else {
                     if (img.ones.isNotEmpty()) {
-                        val minX = img.ones.minBy { it.first }!!
-                        val minY = img.ones.minBy { it.second }!!
+                        val minX = img.ones.minBy { it.first }!!.first
+                        val minY = img.ones.minBy { it.second }!!.second
 
-                        curX = minY.first
-                        curY = minX.second
+                        val maxX = img.ones.maxBy { it.first }!!.first
+                        val maxY = img.ones.maxBy { it.second }!!.second
+
+                        val lb = minX to minY
+                        val rt = maxX to maxY
+
+                        bb = lb to rt
+
+                        println("BB: (${lb.first}, ${lb.second}) -> (${rt.first}, ${rt.second})")
+
+                        println(img)
                     }
-                }
 
-                if (mode == Num(2)) {
-                    curX = 0
-                    curY = 0
-                }
+                    val mode = car(state).exhaustiveEval(bc)
 
-                if (mode == Num(5)) {
-                    curX = curX + 2
-                    if (curX !in bb.first.first..bb.second.first) {
-                        curX = bb.first.first
-                        curY = curY + 2
+                    if (mode == Num(1)) {
+                        if (img.ones.isNotEmpty()) {
+                            val minX = img.ones.minBy { it.first }!!
+                            val minY = img.ones.minBy { it.second }!!
+
+                            curX = minY.first
+                            curY = minX.second
+                        }
+                    }
+
+                    if (mode == Num(2)) {
+                        curX = 0
+                        curY = 0
+                    }
+
+                    if (mode == Num(5)) {
+                        curX = curX + 2
+                        if (curX !in bb.first.first..bb.second.first) {
+                            curX = bb.first.first
+                            curY = curY + 2
+                        }
                     }
                 }
             }

@@ -70,7 +70,7 @@ class Game {
         System.err.println("$request")
         System.err.println("${request.symbol()}")
         val requestData = request.modulate()
-        val httpRequest = Request.Builder().url(GSMS.serverUrl).post(requestData.toRequestBody()).build()
+        val httpRequest = Request.Builder().url("${GSMS.serverUrl}/aliens/send").post(requestData.toRequestBody()).build()
         val response = client.newCall(httpRequest).execute()
         val status = response.code
         check(status == 200)

@@ -4,6 +4,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import ru.spbstu.protocol.Protocol
+import kotlin.random.Random
 
 interface GameRequest {
     fun symbol(): Symbol
@@ -84,7 +85,9 @@ class Game {
     }
 
     open fun join() = Join(emptyList())
-    open fun start(state: GameResponse) = Start(1, 1, 1, 1)
+    open fun start(state: GameResponse) =
+        Start(Random.nextLong(0, 100), Random.nextLong(0, 100), Random.nextLong(0, 100), Random.nextLong(0, 100))
+
     open fun command(state: GameResponse) = ShipCommand(emptyList())
 
     fun loop() {

@@ -41,7 +41,7 @@ fun parseMatrix(data: List<List<Boolean>>): Matrix {
 }
 
 fun Matrix.toSymbol(): Symbol {
-    return requireNotNull(toNumber() ?: toVariable() ?: toFunction())
+    return toNumber() ?: toVariable() ?: toFunction() ?: toUndefined()
 }
 
 fun Matrix.toNumber(): Symbol.Number? {
@@ -68,6 +68,11 @@ fun Matrix.toFunction(): Symbol.Function? {
     if (data.any { !it[0] }) return null
     val code = drop().toCode()
     return Symbol.Function(this, code, ":$code")
+}
+
+fun Matrix.toUndefined(): Symbol.Custom {
+    val code = toCode()
+    return Symbol.Custom(this, code, "u$code")
 }
 
 fun Long.pow(power: Long): Long = when {

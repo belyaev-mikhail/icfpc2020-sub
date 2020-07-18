@@ -354,15 +354,13 @@ fun eval(bindings: List<Symbol>) {
                     println(Protocol().encode(state))
                 }
 
-                val img = sequenceOf(pics.exhaustiveEval(bc))
+                val imgs = sequenceOf(pics.exhaustiveEval(bc))
                     .flatten()
                     .filterIsInstance<Picture>()
-                    .fold(Picture(setOf())) {
-                            acc, e -> Picture(acc.ones + e.ones)
-                    }
+                    .toList()
 
                 if (isGalaxyComing) {
-                    val current = GalaxyDraw.interact(img)
+                    val current = GalaxyDraw.interact(imgs)
                     if (current == null) {
                         val a = states.pop()
                         state = a.first
@@ -374,6 +372,9 @@ fun eval(bindings: List<Symbol>) {
                         println("$curX -> $curY")
                     }
                 } else {
+                    val img = imgs.fold(Picture(setOf())) {
+                            acc, e -> Picture(acc.ones + e.ones)
+                    }
                     if (img.ones.isNotEmpty()) {
                         val minX = img.ones.minBy { it.first }!!.first
                         val minY = img.ones.minBy { it.second }!!.second

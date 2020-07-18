@@ -67,7 +67,7 @@ private class GalaxyPane(private val statusBar: StatusBar) : JPanel() {
             for ((x, y) in points) {
                 g.fillRect(x * RECT_WIDTH, y * RECT_WIDTH, RECT_WIDTH, RECT_HEIGHT)
             }
-            g.color = Color.BLACK
+            g.color = Color.GRAY
             g.drawRect(statusBar.currentX * RECT_WIDTH - 1, statusBar.currentY * RECT_WIDTH - 1, RECT_WIDTH + 2, RECT_HEIGHT + 2)
         }
     }
@@ -133,22 +133,32 @@ private class GalaxyFrame : JFrame("Galaxy") {
 object GalaxyDraw {
     private val galaxyFrame = GalaxyFrame()
 
-    fun interact(vararg pictures: Picture): Pair<Int, Int>? {
-        val random = Random(1)
+    private val colors: Sequence<Color>
+        get() = sequence {
+            val random = Random(1)
+            yield(Color.BLACK)
+            yield(Color.RED.brighter())
+            yield(Color.YELLOW.brighter())
+            yield(Color.GREEN.brighter())
+            while (true) {
+                with(random) {
+                    yield(Color(nextInt(256), nextInt(256), nextInt(256), nextInt(256)))
+                }
+            }
+        }
+
+    fun interact(pictures: List<Picture>): Pair<Int, Int>? {
         val left = pictures.mapNotNull { it.ones.map { it.first }.min() }.min()!!.toInt()
         val top = pictures.mapNotNull { it.ones.map { it.second }.min() }.min()!!.toInt()
         val right = pictures.mapNotNull { it.ones.map { it.first }.max() }.max()!!.toInt()
         val bottom = pictures.mapNotNull { it.ones.map { it.second }.max() }.max()!!.toInt()
-        val layers = pictures.map {
-            it.ones
-                    .map { (x, y) -> x.toInt() to y.toInt() }
-                    .map { (x, y) -> x - left to y - top } to random.nextColor()
-        }
+        val layers = pictures.zip(colors.take(pictures.size).toList()).reversed()
+                .map { (pic, color) ->
+                    pic.ones
+                            .map { (x, y) -> x.toInt() to y.toInt() }
+                            .map { (x, y) -> x - left to y - top } to color
+                }
         return interact(Rectangle(left, top, right - left, bottom - top), layers)
-    }
-
-    private fun Random.nextColor(): Color {
-        return Color(nextInt(256), nextInt(256), nextInt(256), nextInt(256))
     }
 
     private fun interact(rect: Rectangle, layers: List<Pair<List<Pair<Int, Int>>, Color>>): Pair<Int, Int>? {

@@ -21,4 +21,10 @@ class ParserTest {
         val file = File("data/galaxy.txt").readText()
         assertEquals(file.lines().size, parse(file).size)
     }
+
+    @Test
+    fun `test old parser`() {
+        val file = File("data/galaxy.txt").readText()
+        assertEquals(file.lines().size, parseOld(file).size)
+    }
 }

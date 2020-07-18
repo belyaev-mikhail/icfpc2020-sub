@@ -9,9 +9,7 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.swing.*
 import javax.swing.BoxLayout
-
-
-
+import javax.swing.JTextPane
 
 
 private class StatusBar : JPanel() {
@@ -157,9 +155,13 @@ private class TranslatorPane(private val statusBar: StatusBar) : JPanel() {
         val data = List(rect.height) { y -> List(rect.width) { x -> x to y in points } }
         val symbol = Symbols.get(parseMatrix(data))
 
+        val commandName = JTextPane()
+        commandName.text = symbol.command
+        commandName.isEditable = false
+
         val rowPane = JPanel()
         rowPane.layout = FlowLayout()
-        rowPane.add(JLabel(symbol.command))
+        rowPane.add(commandName)
         rowPane.add(MatrixPane(rect.width, rect.height, statusBar, layers))
         add(rowPane)
     }
@@ -233,7 +235,7 @@ private class GalaxyFrame : JFrame("Galaxy") {
                 galaxyPane.repaint()
             }
             galaxyPane.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0), "KEY_P")
-            galaxyPane.actionMap.put("KEY_P", object: AbstractAction() {
+            galaxyPane.actionMap.put("KEY_P", object : AbstractAction() {
                 override fun actionPerformed(e: ActionEvent) {
                     promise.complete(statusBar.real)
                     promise = CompletableFuture()

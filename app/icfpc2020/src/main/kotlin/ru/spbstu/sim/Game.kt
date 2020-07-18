@@ -85,8 +85,17 @@ class Game {
     }
 
     open fun join() = Join(emptyList())
-    open fun start(state: GameResponse) =
-        Start(Random.nextLong(0, 100), Random.nextLong(0, 100), Random.nextLong(0, 100), Random.nextLong(0, 100))
+    open fun start(state: GameResponse): Start {
+        var max = 16L
+        val first = if (max == 0L) 0 else Random.nextLong(0, max)
+        max -= first
+        val second = if (max == 0L) 0 else Random.nextLong(0, max)
+        max -= second
+        val third = if (max == 0L) 0 else Random.nextLong(0, max)
+        max -= third
+        val fourth = if (max == 0L) 0 else Random.nextLong(0, max)
+        return Start(first, second, third, fourth)
+    }
 
     open fun command(state: GameResponse) = ShipCommand(emptyList())
 

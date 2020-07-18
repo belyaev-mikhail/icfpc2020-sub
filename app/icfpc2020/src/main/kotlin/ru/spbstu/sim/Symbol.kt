@@ -232,16 +232,30 @@ fun consListOf(vararg symbols: Symbol) = consListOf(symbols.iterator())
 
 val vec = cons
 
+fun Sequence<Symbol>.flatten(): Sequence<Symbol> {
+    return flatMap { cell ->
+        if (cell !is Cons) return@flatMap sequenceOf<Symbol>()
+        val (x, y) = cell
+
+        if (x is Num && y is Num) return@flatMap sequenceOf(cell)
+
+        return@flatMap sequenceOf(x).flatten() + sequenceOf(y).flatten()
+    }
+}
+
 val draw by Fun { lst ->
     when (val lst = strict(lst)) {
         is Nil -> Picture(setOf())
-        is Cons -> lst.iterator().asSequence().mapNotNullTo(mutableSetOf<Pair<Long, Long>>()) { cell ->
-            if (cell !is Cons) return@mapNotNullTo null
-            val (x, y) = cell
-            check(x is Num) { x }
-            check(y is Num) { y }
-            x.number to y.number
-        }.let { Picture(it) }
+        is Cons -> lst.iterator().asSequence()
+            .flatten()
+            .mapNotNullTo(mutableSetOf<Pair<Long, Long>>()) { cell ->
+                if (cell !is Cons) return@mapNotNullTo null
+                val (x, y) = cell
+                check(x is Num) { x }
+                check(y is Num) { y }
+                x.number to y.number
+            }
+            .let { Picture(it) }
         else -> TODO()
     }
 }
@@ -326,10 +340,11 @@ fun f38(bindingContext: MutableMap<Symbol, Symbol>, protocol: Symbol, res: Symbo
     if (flag == Num(0)) {
         val p = Protocol()
         val modem = p.decode(p.encode(newState))
+        val pics = multipledraw(data)
+
+        println(pics.exhaustiveEval(bindingContext))
 
         return modem
-
-        val pics = multipledraw(data)
 
         return cons(modem)(cons(pics)(nil))
     }

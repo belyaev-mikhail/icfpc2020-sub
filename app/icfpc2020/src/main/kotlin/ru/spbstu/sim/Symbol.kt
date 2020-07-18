@@ -7,6 +7,7 @@ import ru.spbstu.draw.GalaxyDraw
 import ru.spbstu.pow
 import ru.spbstu.protocol.Protocol
 import java.io.File
+import java.lang.Exception
 import java.util.*
 import kotlin.reflect.KProperty
 
@@ -58,8 +59,12 @@ operator fun Symbol.unaryMinus(): Symbol {
     return Num(-this.number)
 }
 
-data class Curry2(val interp: EvaluationContext.(Symbol, Symbol) -> Symbol): (EvaluationContext, Symbol) -> Symbol {
-    data class Applied(val interp: EvaluationContext.(Symbol, Symbol) -> Symbol, val arg1: Symbol): (EvaluationContext, Symbol) -> Symbol {
+interface TwoArgFunction
+interface OneArgFunction
+interface ThreeArgFunction
+
+data class Curry2(val interp: EvaluationContext.(Symbol, Symbol) -> Symbol): (EvaluationContext, Symbol) -> Symbol, TwoArgFunction {
+    data class Applied(val interp: EvaluationContext.(Symbol, Symbol) -> Symbol, val arg1: Symbol): (EvaluationContext, Symbol) -> Symbol, OneArgFunction {
         override fun invoke(ec: EvaluationContext, arg2: Symbol): Symbol {
             return ec.interp(arg1, arg2)
         }
@@ -74,7 +79,7 @@ data class Curry2(val interp: EvaluationContext.(Symbol, Symbol) -> Symbol): (Ev
 
 data class Curry3(
     val interp: EvaluationContext.(Symbol, Symbol, Symbol) -> Symbol
-): (EvaluationContext, Symbol) -> Symbol {
+): (EvaluationContext, Symbol) -> Symbol, ThreeArgFunction {
 
 
 
@@ -82,7 +87,7 @@ data class Curry3(
         val interp: EvaluationContext.(Symbol, Symbol, Symbol) -> Symbol,
         val arg1: Symbol,
         val arg2: Symbol
-    ): (EvaluationContext, Symbol) -> Symbol {
+    ): (EvaluationContext, Symbol) -> Symbol, OneArgFunction {
         override fun invoke(ec: EvaluationContext, arg3: Symbol): Symbol {
             return ec.interp(arg1, arg2, arg3)
         }
@@ -93,7 +98,7 @@ data class Curry3(
     data class Applied1(
         val interp: EvaluationContext.(Symbol, Symbol, Symbol) -> Symbol,
         val arg1: Symbol
-    ): (EvaluationContext, Symbol) -> Symbol {
+    ): (EvaluationContext, Symbol) -> Symbol, TwoArgFunction {
         override fun invoke(ec: EvaluationContext, arg2: Symbol): Symbol {
             return Fun(Applied2(interp, arg1, arg2))
         }
@@ -114,8 +119,11 @@ data class Fun(val name: String?, val interp: EvaluationContext.(Symbol) -> Symb
     constructor(interp: EvaluationContext.(Symbol, Symbol, Symbol) -> Symbol) :
             this(Curry3(interp))
 
-    constructor(interp: EvaluationContext.(Symbol, Symbol, Symbol, Symbol) -> Symbol) :
-            this({ a -> Fun { b -> Fun { c -> Fun { d -> interp(a, b, c, d) } } } })
+    val numArgs: Int? get() = when(interp) {
+        is Curry3 -> 3
+        is Curry2, is Curry3.Applied1 -> 2
+        else -> 1
+    }
 
     companion object FunNaming {
         var counter = 0
@@ -158,7 +166,7 @@ object Nil : Symbol() {
     fun interp(arg: Symbol) = t
 }
 
-data class Cons(val car: Symbol, val cdr: Symbol) : Symbol() {
+data class Cons(val car: Symbol, val cdr: Symbol) : Symbol(), TwoArgFunction {
     override fun subst(mapping: Map<Symbol, Symbol>): Symbol =
         Cons(car.subst(mapping), cdr.subst(mapping))
 
@@ -171,10 +179,18 @@ data class Cons(val car: Symbol, val cdr: Symbol) : Symbol() {
         copy(car.eval(mapping), cdr.eval(mapping))
 
     fun iterator(): Iterator<Symbol> = kotlin.sequences.iterator<Symbol> {
-        yield(car)
-        when (cdr) {
-            is Cons -> yieldAll(cdr.iterator())
-            else -> yield(cdr)
+        var current = this@Cons
+        loop@while(true) {
+            yield(current.car)
+            when (val cdr = current.cdr) {
+                is Cons -> {
+                    current = cdr
+                }
+                else -> {
+                    yield(cdr)
+                    break@loop
+                }
+            }
         }
     }
 
@@ -240,11 +256,41 @@ data class Picture(val ones: Set<Pair<Long, Long>>) : Symbol() {
 
 data class Binding(val lhs: Symbol, val rhs: Symbol) : Symbol()
 
+//val appCache = mutableMapOf<Pair<Symbol, Symbol>, Symbol>()
 fun app(f: Symbol, arg: Symbol): Symbol {
-    return when (f) {
-        //is Fun -> f.interp(arg)
-        else -> Ap(f, arg)
+    when(f) {
+        is Fun -> try {
+            with(f) {
+                return EvaluationContext(mutableMapOf()).interp(arg)
+            }
+        } catch (ex: Exception) {
+            return Ap(f, arg)
+        }
+        is Ap -> {
+            when {
+                f.f is Fun && f.f.numArgs == 2 -> {
+                    try {
+                        with(f.f) {
+                            return EvaluationContext(mutableMapOf()).interp(f.arg)(arg)
+                        }
+                    } catch (ex: IllegalStateException) {
+                        return Ap(f, arg)
+                    }
+                }
+                f.f is Ap && f.f.f is Fun && f.f.f.numArgs == 3 -> {
+                    try {
+                        with(f.f.f) {
+                            return EvaluationContext(mutableMapOf()).interp(f.f.arg)(f.arg)(arg)
+                        }
+                    } catch (ex: IllegalStateException) {
+                        return Ap(f, arg)
+                    }
+                }
+            }
+        }
     }
+    return Ap(f, arg)
+    //return appCache[f to arg] ?: Ap(f, arg).also { appCache[f to arg] = it }
 }
 
 operator fun Symbol.invoke(that: Symbol) = app(this, that)
@@ -493,7 +539,7 @@ fun Symbol.exhaustiveEval(mapping: MutableMap<Symbol, Symbol>): Symbol {
         val prev = current
         current = current.eval(mapping)
     } while (current != prev)
-    mapping[this] = current
+    //mapping[this] = current
     return current
 }
 

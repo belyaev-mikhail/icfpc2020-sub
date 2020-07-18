@@ -1,6 +1,7 @@
 package ru.spbstu
 
 import ru.spbstu.sim.GSMS
+import ru.spbstu.sim.Game
 import ru.spbstu.sim.eval
 import ru.spbstu.sim.parse
 import java.io.File
@@ -13,5 +14,7 @@ fun main(args: Array<String>) {
     GSMS.serverUrl = serverUrl
     GSMS.playerKey = playerKey
 
-    eval(aa)
+    val game = Game()
+    game.loop()
 }
+

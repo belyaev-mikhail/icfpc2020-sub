@@ -11,27 +11,27 @@ interface GameRequest {
 }
 
 data class Join(val arguments: List<Symbol>) : GameRequest {
-    override fun symbol() = listOf(
+    override fun symbol() = consListOf(
         Num(2),
         Num(GSMS.playerKey.toLong()),
-        arguments.asListSymbol()
-    ).asListSymbol()
+        consListOf(arguments)
+    )
 }
 
 data class Start(val number1: Long, val number2: Long, val number3: Long, val number4: Long) : GameRequest {
-    override fun symbol() = listOf(
+    override fun symbol() = consListOf(
         Num(3),
         Num(GSMS.playerKey.toLong()),
-        listOf(number1, number2, number3, number4).map { Num(it) }.asListSymbol()
-    ).asListSymbol()
+        consListOf(listOf(number1, number2, number3, number4).map { Num(it) })
+    )
 }
 
 data class ShipCommand(val commands: List<Symbol>) : GameRequest {
-    override fun symbol() = listOf(
+    override fun symbol() = consListOf(
         Num(4),
         Num(GSMS.playerKey.toLong()),
-        commands.asListSymbol()
-    ).asListSymbol()
+        consListOf(commands)
+    )
 }
 
 enum class GameStage {
@@ -61,12 +61,11 @@ data class GameResponse(
     }
 }
 
-private fun List<Symbol>.asListSymbol(): Symbol = fold(nil as Symbol) { acc, symbol -> Cons(symbol, acc) }
-
 class Game {
     private val client = OkHttpClient()
     private fun send(request: GameRequest): GameResponse {
         System.err.println("$request")
+        System.err.println("${request.symbol()}")
         val requestData = request.modulate()
         val httpRequest = Request.Builder().url(GSMS.serverUrl).post(requestData.toRequestBody()).build()
         val response = client.newCall(httpRequest).execute()

@@ -198,8 +198,8 @@ val f = app(s, t)
 val lt by Fun { a, b ->
     val a = strict(a)
     val b = strict(b)
-    check(a is Num)
-    check(b is Num)
+    check(a is Num) { a }
+    check(b is Num) { b }
     if (a.number < b.number) t else f
 }
 val eq by Fun { a, b ->
@@ -325,11 +325,11 @@ fun eval(bindings: List<Symbol>) {
         for (y in -3L..3L) {
             println("=== $x $y ===")
 
-            var state: Symbol = nil // Protocol().decode("110110001011110110000111101000010011010110000")
+            var state: Symbol = nil // Protocol().decode("110110010111110110001011010110011001100110011001101111101110011011111110001101101000110000")
             var curX = x
             var curY = y
 
-            var bb = (0L to 0L) to (0L to 0L)
+            var bb = (-3L to -3L) to (3L to 3L)
 
             while (true) {
 
@@ -350,14 +350,14 @@ fun eval(bindings: List<Symbol>) {
                     }
 
                 if (img.ones.isNotEmpty()) {
-                    val minX = img.ones.minBy { it.first }!!
-                    val minY = img.ones.minBy { it.second }!!
+                    val minX = img.ones.minBy { it.first }!!.first
+                    val minY = img.ones.minBy { it.second }!!.second
 
-                    val maxX = img.ones.maxBy { it.first }!!
-                    val maxY = img.ones.maxBy { it.second }!!
+                    val maxX = img.ones.maxBy { it.first }!!.first
+                    val maxY = img.ones.maxBy { it.second }!!.second
 
-                    val lb = minX.first to minY.second
-                    val rt = maxX.first to maxY.second
+                    val lb = minX to minY
+                    val rt = maxX to maxY
 
                     bb = lb to rt
 
@@ -381,20 +381,13 @@ fun eval(bindings: List<Symbol>) {
                 if (mode == Num(2)) {
                     curX = 0
                     curY = 0
-
-                    continue
                 }
 
                 if (mode == Num(5)) {
-                    if (curX == 0L) {
+                    curX = curX + 2
+                    if (curX !in bb.first.first..bb.second.first) {
                         curX = bb.first.first
-                        curY = bb.first.second
-                    } else {
-                        curX = curX + 1
-                        if (curX !in bb.first.first..bb.second.first) {
-                            curX = bb.first.first
-                            curY = curY + 1
-                        }
+                        curY = curY + 2
                     }
                 }
             }
@@ -429,24 +422,23 @@ fun f38(bindingContext: MutableMap<Symbol, Symbol>, protocol: Symbol, res: Symbo
 
         return modem to pics
     } else {
-        val playerKey = "5b38d34226a14d73878985ecdc25f79a"
-        val serverUrl = "https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=$playerKey"
-
         val client = OkHttpClient()
 
         val flattenedData = consListOf(sequenceOf(data).flatten().iterator())
         println(Protocol().encode(flattenedData))
 
-        val request = Request.Builder().url(serverUrl).post(Protocol().encode(flattenedData).toRequestBody()).build()
+        val request = Request.Builder().url("${GSMS.serverUrl}").post(Protocol().encode(flattenedData).toRequestBody()).build()
         val response = client.newCall(request).execute()
         val status = response.code
         val body = response.body ?: TODO("FUCK")
 
         val res = body.string()
         println(res)
-        println(Protocol().decode(res))
 
-        return interact(bindingContext, protocol, modem, Protocol().decode(res))
+        val parsed = Protocol().decode(res)
+        println(parsed)
+
+        return interact(bindingContext, protocol, modem, parsed)
     }
 }
 
@@ -471,6 +463,9 @@ fun main() {
     println(s(i)(i)(i)(Num(2)))
     println((s(i)(i)(i)(Num(2))).eval(mutableMapOf()))
     println(b(b(b)).eval(mutableMapOf()))
+
+    GSMS.playerKey = "5b38d34226a14d73878985ecdc25f79a"
+    GSMS.serverUrl = "https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=${GSMS.playerKey}"
 
     val aa = parse(File("data/galaxy.txt").readText())
     eval(aa)

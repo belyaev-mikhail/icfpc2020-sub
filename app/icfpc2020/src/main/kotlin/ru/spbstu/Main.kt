@@ -1,39 +1,17 @@
 package ru.spbstu
 
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.net.HttpURLConnection
+import ru.spbstu.sim.GSMS
+import ru.spbstu.sim.eval
+import ru.spbstu.sim.parse
+import java.io.File
 
 fun main(args: Array<String>) {
-    try {
-        val (serverUrl, playerKey) = args
+    val aa = parse(File("app/icfpc2020/data/galaxy.txt").readText())
 
-        println("ServerUrl: $serverUrl; PlayerKey: $playerKey")
+    val (serverUrl, playerKey) = args
 
-        val client = OkHttpClient()
+    GSMS.serverUrl = serverUrl
+    GSMS.playerKey = playerKey
 
-        val request = Request.Builder().url(serverUrl).post(playerKey.toRequestBody()).build()
-
-        val response = client.newCall(request).execute()
-
-        val status = response.code
-
-        val body = response.body
-        check(body != null)
-
-        if (status != HttpURLConnection.HTTP_OK) {
-            println("Unexpected server response:");
-            println("HTTP code: " + status);
-
-            println("Response body: " + body.string());
-            System.exit(2);
-        }
-
-        println("Server response: " + body.string());
-    } catch (e: Exception) {
-        println("Unexpected server response:");
-        e.printStackTrace(System.out);
-        System.exit(1);
-    }
+    eval(aa)
 }

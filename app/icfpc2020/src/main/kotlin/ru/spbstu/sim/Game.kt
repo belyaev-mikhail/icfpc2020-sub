@@ -45,11 +45,13 @@ data class GameResponse(
     val maybeStateOfGame: Symbol
 ) {
     companion object {
-        fun valueOf(symbol: Symbol): GameResponse {
-            return GameResponse(0, GameStage.NOT_STARTED, nil, nil)
+        fun valueOf(symbol: Symbol): GameResponse? {
             var cons = symbol as Cons
             val status = (cons.car as Num).number
-            if (status != 1L) TODO("Incorrect game response")
+            if (status != 1L) {
+                System.err.println("Incorrect response: $symbol")
+                return null
+            }
             cons = cons.cdr as Cons
             val stageIndex = (cons.car as Num).number.toInt()
             val stage = GameStage.values()[stageIndex]
@@ -64,13 +66,12 @@ data class GameResponse(
 
 class Game {
     private val client = OkHttpClient()
-    private fun send(request: GameRequest): GameResponse {
-        System.err.println(GSMS.serverUrl)
-        System.err.println("${GSMS.playerKey}")
+    private fun send(request: GameRequest): GameResponse? {
         System.err.println("$request")
         System.err.println("${request.symbol()}")
         val requestData = request.modulate()
-        val httpRequest = Request.Builder().url("${GSMS.serverUrl}/aliens/send").post(requestData.toRequestBody()).build()
+        val httpRequest =
+            Request.Builder().url("${GSMS.serverUrl}/aliens/send").post(requestData.toRequestBody()).build()
         val response = client.newCall(httpRequest).execute()
         val status = response.code
         check(status == 200)
@@ -88,16 +89,16 @@ class Game {
 
     fun loop() {
         val join = join()
-        var state = send(join)
+        var state = send(join) ?: return
         System.err.println("Join")
         System.err.println("$state")
         val start = start(state)
-        state = send(start)
+        state = send(start) ?: return
         System.err.println("Start")
         System.err.println("$state")
         while (state.stage != GameStage.FINISHED) {
             val cmd = command(state)
-            state = send(cmd)
+            state = send(cmd) ?: return
             System.err.println("Command")
             System.err.println("$state")
         }

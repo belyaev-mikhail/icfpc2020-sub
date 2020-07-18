@@ -4,12 +4,15 @@ import ru.spbstu.Symbols
 import ru.spbstu.parseMatrix
 import ru.spbstu.sim.Picture
 import java.awt.*
-import java.awt.event.*
+import java.awt.event.ActionEvent
+import java.awt.event.KeyEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.swing.*
 import javax.swing.BoxLayout
-import javax.swing.JTextPane
 
 
 private class StatusBar : JPanel() {
@@ -60,21 +63,47 @@ private class StatusBar : JPanel() {
     val realY get() = real.second
     val real: Pair<Int, Int> get() = currentX + shiftX to currentY + shiftY
 
-    private val shiftLabel = JLabel("shift = ($shiftX, $shiftY)")
-    private val sizeLabel = JLabel("size = ($sizeX, $sizeY)")
-    private val currentLabel = JLabel("current = ($currentX, $currentY)")
-    private val startLabel = JLabel("start = ($startX, $startY)")
-    private val endLabel = JLabel("end = ($endX, $endY)")
-    private val realLabel = JLabel("current + shift = ($realX, $realY)")
+    private val statsPane = JPanel()
+
+    private val shiftLabel = JLabel()
+    private val sizeLabel = JLabel()
+    private val currentLabel = JLabel()
+    private val startLabel = JLabel()
+    private val endLabel = JLabel()
+    private val realLabel = JLabel()
+
+    var isAvailable: Boolean = false
+        set(value) {
+            field = value
+            availabilityLabel.text = if (isAvailable) "available" else "wait..."
+            if (value) {
+                val date = Calendar.getInstance().time
+                val dateFormat = SimpleDateFormat("hh:mm:ss")
+                timeLabel.text = dateFormat.format(date)
+            }
+        }
+
+    private val availabilityPane = JPanel()
+
+    private val availabilityLabel = JLabel()
+    private val timeLabel = JLabel()
 
     init {
-        layout = FlowLayout()
-        add(shiftLabel)
-        add(sizeLabel)
-        add(currentLabel)
-        add(startLabel)
-        add(endLabel)
-        add(realLabel)
+        statsPane.layout = FlowLayout()
+        statsPane.add(shiftLabel)
+        statsPane.add(sizeLabel)
+        statsPane.add(currentLabel)
+        statsPane.add(startLabel)
+        statsPane.add(endLabel)
+        statsPane.add(realLabel)
+
+        availabilityPane.layout = FlowLayout()
+        availabilityPane.add(availabilityLabel)
+        availabilityPane.add(timeLabel)
+
+        layout = BorderLayout()
+        add(availabilityPane, BorderLayout.EAST)
+        add(statsPane, BorderLayout.WEST)
     }
 }
 
@@ -234,14 +263,16 @@ private class GalaxyFrame : JFrame("Galaxy") {
             }
             val incButton = Button("+")
             incButton.addActionListener {
-                if (statusBar.scale++ >= 11) {
-                    statusBar.scale = 10
+                statusBar.scale++
+                if (statusBar.scale >= 30) {
+                    statusBar.scale = 30
                 }
                 galaxyPane.repaint()
             }
             val decButton = Button("-")
             decButton.addActionListener {
-                if (statusBar.scale-- <= 0) {
+                statusBar.scale--
+                if (statusBar.scale <= 1) {
                     statusBar.scale = 1
                 }
                 galaxyPane.repaint()
@@ -315,12 +346,15 @@ object GalaxyDraw {
 
     private fun interact(rect: Rectangle, layers: List<Pair<List<Pair<Int, Int>>, Color>>): Pair<Int, Int>? {
         SwingUtilities.invokeLater {
+            galaxyFrame.statusBar.isAvailable = true
             galaxyFrame.statusBar.shift = rect.x to rect.y
             galaxyFrame.statusBar.size = rect.width to rect.height
             galaxyFrame.galaxyPane.layers = layers
             galaxyFrame.galaxyScroll.invalidate()
             galaxyFrame.galaxyScroll.repaint()
         }
-        return galaxyFrame.promise.get()
+        return galaxyFrame.promise.get().also {
+            galaxyFrame.statusBar.isAvailable = false
+        }
     }
 }

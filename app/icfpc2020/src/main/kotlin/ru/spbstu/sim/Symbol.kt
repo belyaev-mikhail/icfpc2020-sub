@@ -440,9 +440,11 @@ fun eval(bindings: List<Symbol>) {
         for (y in -3L..3L) {
             println("=== $x $y ===")
 
-            var state: Symbol = nil // Protocol().decode("110110010111110110001011010110011001100110011001101111101110011011111110001101101000110000")
+            var state: Symbol = Protocol().decode("11011001011111011000101101011001100110011001100110111111111111111111000000000000000000000000000000000000000000000000000001100011111110101001101101001110000")
             var curX = x
             var curY = y
+
+            isGalaxyComing = true
 
             var bb = (-3L to -3L) to (3L to 3L)
 

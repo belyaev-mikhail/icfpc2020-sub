@@ -1,6 +1,7 @@
 package ru.spbstu.sim
 
 import ru.spbstu.pow
+import ru.spbstu.protocol.Protocol
 import java.io.File
 import kotlin.reflect.KProperty
 
@@ -71,7 +72,7 @@ data class Fun(val name: String?, val interp: EvaluationContext.(Symbol) -> Symb
 class EvaluationContext(val mapping: MutableMap<Symbol, Symbol>) {
     fun strict(sym: Symbol): Symbol {
         val res = sym.exhaustiveEval(mapping)
-        if(sym is Var) mapping[sym] = res
+        if (sym is Var) mapping[sym] = res
         return res
     }
 }
@@ -135,13 +136,20 @@ data class Var(val name: String) : Symbol() {
 
 data class Picture(val ones: Set<Pair<Long, Long>>) : Symbol() {
     override fun toString(): String {
-        val width = ones.map { it.first }.max()?.plus(2) ?: 5
-        val height = ones.map { it.second }.max()?.plus(2) ?: 5
+        val minWidth = ones.map { it.first }.min()?.minus(2) ?: 0
+        val minHeight = ones.map { it.second }.min()?.minus(2) ?: 0
+
+        val maxWidth = ones.map { it.first }.max()?.plus(2) ?: 5
+        val maxHeight = ones.map { it.second }.max()?.plus(2) ?: 5
+
+        val width = maxWidth - minWidth
+        val height = maxHeight - minHeight
+
         val canvas = List(height.toInt()) {
             StringBuilder("□".repeat(width.toInt()))
         }
         for ((x, y) in ones) {
-            canvas[y.toInt()][x.toInt()] = '■'
+            canvas[(y - minHeight).toInt()][(x - minWidth).toInt()] = '■'
         }
         return canvas.joinToString("\n")
     }
@@ -228,8 +236,8 @@ val draw by Fun { lst ->
         is Cons -> lst.iterator().asSequence().mapNotNullTo(mutableSetOf<Pair<Long, Long>>()) { cell ->
             if (cell !is Cons) return@mapNotNullTo null
             val (x, y) = cell
-            check(x is Num)
-            check(y is Num)
+            check(x is Num) { x }
+            check(y is Num) { y }
             x.number to y.number
         }.let { Picture(it) }
         else -> TODO()
@@ -262,38 +270,33 @@ val b by Fun { x0, x1, x2 -> strict(x0)(strict(x1)(x2)) }
 
 fun eval(bindings: List<Symbol>) {
     val bindingContext = mutableMapOf<Symbol, Symbol>()
+
     for (binding in bindings) {
         check(binding is Binding)
         bindingContext[binding.lhs] = binding.rhs
     }
+
     for (binding in bindings) {
-        check(binding is Binding)
-        println("" + binding.lhs + " :=" + binding.rhs)
-    }
-    val galaxy = bindings.last()
-    galaxy as Binding
-    println(galaxy)
-    val task = galaxy.rhs(Nil)(vec(Num(0))(Num(0)))
-    for(binding in bindings) {
         check(binding is Binding)
         System.err.print("${binding.lhs} := ")
         val res = binding.rhs.eval(bindingContext)
         System.err.println("$res")
         bindingContext[binding.lhs] = res
     }
-    var answer = task.exhaustiveEval(bindingContext)
-    println(answer)
-    answer = answer.eval(bindingContext)
-    println(answer)
-    answer = answer.eval(bindingContext)
-    println(answer)
-    answer = answer.eval(bindingContext)
-    println(answer)
-    answer = answer.eval(bindingContext)
-    println(answer)
-    answer = answer.eval(bindingContext)
-    println(answer)
 
+    val galaxy = bindings.last()
+    galaxy as Binding
+    println(galaxy)
+
+    var state: Symbol = nil
+
+    while (true) {
+        var task = interact(bindingContext, galaxy.lhs, state, vec(Num(0))(Num(0)))
+        val answer = task.exhaustiveEval(bindingContext)
+        println(answer)
+
+        state = answer
+    }
 }
 
 fun Symbol.exhaustiveEval(mapping: MutableMap<Symbol, Symbol>): Symbol {
@@ -301,8 +304,35 @@ fun Symbol.exhaustiveEval(mapping: MutableMap<Symbol, Symbol>): Symbol {
     do {
         val prev = current
         current = current.eval(mapping)
-    } while(current != prev)
+    } while (current != prev)
     return current
+}
+
+fun f38(bindingContext: MutableMap<Symbol, Symbol>, protocol: Symbol, res: Symbol): Symbol {
+    val flag = car(res).exhaustiveEval(bindingContext)
+    val newState = car(cdr(res)).exhaustiveEval(bindingContext)
+    val data = cdr(cdr(res)).exhaustiveEval(bindingContext)
+
+    println(flag)
+    println(newState)
+    println(data)
+
+    if (flag == Num(0)) {
+        val p = Protocol()
+        val modem = p.decode(p.encode(newState))
+
+        return modem
+
+        val pics = multipledraw(data)
+
+        return cons(modem)(cons(pics)(nil))
+    }
+
+    return nil
+}
+
+fun interact(bindingContext: MutableMap<Symbol, Symbol>, protocol: Symbol, state: Symbol, point: Symbol): Symbol {
+    return f38(bindingContext, protocol, protocol(state)(point).exhaustiveEval(bindingContext))
 }
 
 fun main() {
@@ -318,7 +348,6 @@ fun main() {
     println((s(i)(i)(i)(Num(2))).eval(mutableMapOf()))
     println(b(b(b)).eval(mutableMapOf()))
 
-    val aa = parse(File("icfpc2020/data/galaxy.txt").readText())
+    val aa = parse(File("data/galaxy.txt").readText())
     eval(aa)
-    println(aa)
 }

@@ -323,7 +323,7 @@ fun eval(bindings: List<Symbol>) {
     galaxy as Binding
     println(galaxy)
 
-    val states = ArrayDeque<Pair<Symbol, Picture>>()
+    val states = ArrayDeque<Pair<Symbol, Pair<Long, Long>>>()
     var isGalaxyComing = false
 
     for (x in -3L..3L) {
@@ -345,6 +345,7 @@ fun eval(bindings: List<Symbol>) {
                 val (newState, pics) = interact(bc, galaxy.lhs, state, vec(Num(curX))(Num(curY)))
                 val answer = newState.exhaustiveEval(bc)
 
+                states.addFirst(state to (curX to curY))
                 state = answer
 
                 if (car(state).exhaustiveEval(bc) == Num(2)) {
@@ -353,28 +354,24 @@ fun eval(bindings: List<Symbol>) {
                     println(Protocol().encode(state))
                 }
 
-                var img = sequenceOf(pics.exhaustiveEval(bc))
+                val img = sequenceOf(pics.exhaustiveEval(bc))
                     .flatten()
                     .filterIsInstance<Picture>()
                     .fold(Picture(setOf())) {
                             acc, e -> Picture(acc.ones + e.ones)
                     }
 
-                states.addFirst(state to img)
-
                 if (isGalaxyComing) {
-                    while (true) {
-                        val current = GalaxyDraw.interact(img)
-                        if (current == null) {
-                            val a = states.pop()
-                            state = a.first
-                            img = a.second
-                        } else {
-                            curX = current.first.toLong()
-                            curY = current.second.toLong()
-                            println("$curX -> $curY")
-                            break
-                        }
+                    val current = GalaxyDraw.interact(img)
+                    if (current == null) {
+                        val a = states.pop()
+                        state = a.first
+                        curX = a.second.first
+                        curY = a.second.second
+                    } else {
+                        curX = current.first.toLong()
+                        curY = current.second.toLong()
+                        println("$curX -> $curY")
                     }
                 } else {
                     if (img.ones.isNotEmpty()) {

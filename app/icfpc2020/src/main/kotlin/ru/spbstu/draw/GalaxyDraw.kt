@@ -10,7 +10,7 @@ import javax.swing.*
 import javax.swing.BoxLayout
 
 
-private const val RECT_WIDTH = 5
+private const val RECT_WIDTH = 7
 private const val RECT_HEIGHT = RECT_WIDTH
 
 private class StatusBar : JPanel() {

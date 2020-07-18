@@ -7,8 +7,8 @@ import ru.spbstu.draw.GalaxyDraw
 import ru.spbstu.pow
 import ru.spbstu.protocol.Protocol
 import java.io.File
+import java.util.*
 import kotlin.reflect.KProperty
-import java.util.ArrayDeque
 
 sealed class Symbol {
     open fun subst(mapping: Map<Symbol, Symbol>) = this
@@ -58,13 +58,61 @@ operator fun Symbol.unaryMinus(): Symbol {
     return Num(-this.number)
 }
 
+data class Curry2(val interp: EvaluationContext.(Symbol, Symbol) -> Symbol): (EvaluationContext, Symbol) -> Symbol {
+    data class Applied(val interp: EvaluationContext.(Symbol, Symbol) -> Symbol, val arg1: Symbol): (EvaluationContext, Symbol) -> Symbol {
+        override fun invoke(ec: EvaluationContext, arg2: Symbol): Symbol {
+            return ec.interp(arg1, arg2)
+        }
+
+        val hashCode_ = Objects.hash(interp, arg1)
+        override fun hashCode(): Int = hashCode_
+    }
+    override fun invoke(ec: EvaluationContext, arg1: Symbol): Symbol {
+        return Fun(Applied(interp, arg1))
+    }
+}
+
+data class Curry3(
+    val interp: EvaluationContext.(Symbol, Symbol, Symbol) -> Symbol
+): (EvaluationContext, Symbol) -> Symbol {
+
+
+
+    data class Applied2(
+        val interp: EvaluationContext.(Symbol, Symbol, Symbol) -> Symbol,
+        val arg1: Symbol,
+        val arg2: Symbol
+    ): (EvaluationContext, Symbol) -> Symbol {
+        override fun invoke(ec: EvaluationContext, arg3: Symbol): Symbol {
+            return ec.interp(arg1, arg2, arg3)
+        }
+
+        val hashCode_ = Objects.hash(interp, arg1, arg2)
+        override fun hashCode(): Int = hashCode_
+    }
+    data class Applied1(
+        val interp: EvaluationContext.(Symbol, Symbol, Symbol) -> Symbol,
+        val arg1: Symbol
+    ): (EvaluationContext, Symbol) -> Symbol {
+        override fun invoke(ec: EvaluationContext, arg2: Symbol): Symbol {
+            return Fun(Applied2(interp, arg1, arg2))
+        }
+
+        val hashCode_ = Objects.hash(interp, arg1)
+        override fun hashCode(): Int = hashCode_
+    }
+    override fun invoke(ec: EvaluationContext, arg1: Symbol): Symbol {
+        return Fun(Applied1(interp, arg1))
+    }
+}
+
 data class Fun(val name: String?, val interp: EvaluationContext.(Symbol) -> Symbol) : Symbol() {
     constructor(interp: EvaluationContext.(Symbol) -> Symbol) : this(null, interp)
     constructor(interp: EvaluationContext.(Symbol, Symbol) -> Symbol) :
-            this({ a -> Fun { b -> interp(a, b) } })
+            this(Curry2(interp))
 
     constructor(interp: EvaluationContext.(Symbol, Symbol, Symbol) -> Symbol) :
-            this({ a -> Fun { b -> Fun { c -> interp(a, b, c) } } })
+            this(Curry3(interp))
 
     constructor(interp: EvaluationContext.(Symbol, Symbol, Symbol, Symbol) -> Symbol) :
             this({ a -> Fun { b -> Fun { c -> Fun { d -> interp(a, b, c, d) } } } })
@@ -79,6 +127,15 @@ data class Fun(val name: String?, val interp: EvaluationContext.(Symbol) -> Symb
             val app = interp(v)
             "$v -> $app"
         }
+    }
+
+    override fun equals(other: Any?): Boolean =
+        other is Fun
+                && (this.name == other.name)
+                && (name !== null || interp == other.interp)
+
+    override fun hashCode(): Int {
+        return if(name != null) name.hashCode() else interp.hashCode()
     }
 
     operator fun getValue(self: Any?, prop: KProperty<*>) = copy(name = prop.name)
@@ -106,6 +163,9 @@ data class Cons(val car: Symbol, val cdr: Symbol) : Symbol() {
         Cons(car.subst(mapping), cdr.subst(mapping))
 
     fun interp(arg: Symbol) = arg(car)(cdr)
+
+    val hashCode_ = Objects.hash(car, cdr)
+    override fun hashCode(): Int = hashCode_
 
     override fun eval(mapping: MutableMap<Symbol, Symbol>): Symbol =
         copy(car.eval(mapping), cdr.eval(mapping))
@@ -136,6 +196,9 @@ data class Ap(val f: Symbol, val arg: Symbol) : Symbol() {
             }
         }
     }
+
+    val hashCode_ = Objects.hash(f, arg)
+    override fun hashCode(): Int = hashCode_
 }
 
 data class Var(val name: String) : Symbol() {
@@ -302,22 +365,23 @@ val i by Fun { x -> x }
 val k = f
 val c by Fun { f, x, y -> strict(f)(y)(x) }
 val b by Fun { x0, x1, x2 -> strict(x0)(strict(x1)(x2)) }
-
+val bindingContext = mutableMapOf<Symbol, Symbol>()
 fun eval(bindings: List<Symbol>) {
-    val bindingContext = mutableMapOf<Symbol, Symbol>()
+
 
     for (binding in bindings) {
         check(binding is Binding)
-        bindingContext[binding.lhs] = binding.rhs
+        if(binding.lhs !in bindingContext)
+            bindingContext[binding.lhs] = binding.rhs
     }
 
-    for (binding in bindings) {
-        check(binding is Binding)
-        System.err.print("${binding.lhs} := ")
-        val res = binding.rhs.eval(bindingContext)
-        System.err.println("$res")
-        bindingContext[binding.lhs] = res
-    }
+//    for (binding in bindings) {
+//        check(binding is Binding)
+//        System.err.print("${binding.lhs} := ")
+//        val res = binding.rhs.eval(bindingContext)
+//        System.err.println("$res")
+//        bindingContext[binding.lhs] = res
+//    }
 
     val galaxy = bindings.last()
     galaxy as Binding
@@ -342,7 +406,7 @@ fun eval(bindings: List<Symbol>) {
 
                 println("Coords: $curX -> $curY")
 
-                val bc = bindingContext.toMutableMap()
+                val bc = bindingContext //.toMutableMap()
 
                 val (newState, pics) = interact(bc, galaxy.lhs, state, vec(Num(curX))(Num(curY)))
                 val answer = newState.exhaustiveEval(bc)
@@ -426,11 +490,12 @@ fun eval(bindings: List<Symbol>) {
 }
 
 fun Symbol.exhaustiveEval(mapping: MutableMap<Symbol, Symbol>): Symbol {
-    var current = this
+    var current = mapping.getOrElse(this) { this }
     do {
         val prev = current
         current = current.eval(mapping)
     } while (current != prev)
+    mapping[this] = current
     return current
 }
 

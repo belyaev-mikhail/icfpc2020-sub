@@ -9,9 +9,7 @@ import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.swing.*
 import javax.swing.BoxLayout
-
-
-
+import javax.swing.JTextPane
 
 
 private class StatusBar : JPanel() {
@@ -81,23 +79,23 @@ private class StatusBar : JPanel() {
 }
 
 private open class MatrixPane(
-    val sizeX: Int, val sizeY: Int, val statusBar: StatusBar,
+    val sizeX: Int, val sizeY: Int, val scale: Int,
     val layers: List<Pair<List<Pair<Int, Int>>, Color>>
 ) : JPanel() {
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
         g.color = Color.BLACK
-        g.fillRect(0, 0, sizeX * statusBar.scale, sizeY * statusBar.scale)
+        g.fillRect(0, 0, sizeX * scale, sizeY * scale)
         for ((points, color) in layers) {
             g.color = color
             for ((x, y) in points) {
-                g.fillRect(x * statusBar.scale, y * statusBar.scale, statusBar.scale, statusBar.scale)
+                g.fillRect(x * scale, y * scale, scale, scale)
             }
         }
     }
 
     override fun getPreferredSize(): Dimension {
-        return Dimension(sizeX * statusBar.scale, sizeY * statusBar.scale)
+        return Dimension(sizeX * scale, sizeY * scale)
     }
 }
 
@@ -134,6 +132,12 @@ private class GalaxyPane(val statusBar: StatusBar) : JPanel() {
             statusBar.scale,
             statusBar.scale
         )
+        g.drawRect(
+            statusBar.currentX * statusBar.scale - 1,
+            statusBar.currentY * statusBar.scale - 1,
+            statusBar.scale + 2,
+            statusBar.scale + 2
+        )
         g.color = Color.BLUE
         val selection = selectionRect()
         g.drawRect(
@@ -141,6 +145,12 @@ private class GalaxyPane(val statusBar: StatusBar) : JPanel() {
             selection.y * statusBar.scale,
             selection.width * statusBar.scale,
             selection.height * statusBar.scale
+        )
+        g.drawRect(
+            selection.x * statusBar.scale - 1,
+            selection.y * statusBar.scale - 1,
+            selection.width * statusBar.scale + 2,
+            selection.height * statusBar.scale + 2
         )
     }
 
@@ -157,10 +167,14 @@ private class TranslatorPane(private val statusBar: StatusBar) : JPanel() {
         val data = List(rect.height) { y -> List(rect.width) { x -> x to y in points } }
         val symbol = Symbols.get(parseMatrix(data))
 
+        val commandName = JTextPane()
+        commandName.text = symbol.command
+        commandName.isEditable = false
+
         val rowPane = JPanel()
-        rowPane.layout = FlowLayout()
-        rowPane.add(JLabel(symbol.command))
-        rowPane.add(MatrixPane(rect.width, rect.height, statusBar, layers))
+        rowPane.layout = BoxLayout(rowPane, BoxLayout.Y_AXIS)
+        rowPane.add(MatrixPane(rect.width, rect.height, statusBar.scale, layers))
+        rowPane.add(commandName)
         add(rowPane)
     }
 
@@ -172,6 +186,7 @@ private class TranslatorPane(private val statusBar: StatusBar) : JPanel() {
 private class GalaxyFrame : JFrame("Galaxy") {
     var promise = CompletableFuture<Pair<Int, Int>?>()
 
+    val mainPanel = JPanel()
     val statusBar = StatusBar()
     val galaxyPane = GalaxyPane(statusBar)
     val translatorPane = TranslatorPane(statusBar)
@@ -214,7 +229,6 @@ private class GalaxyFrame : JFrame("Galaxy") {
                 val selection = galaxyPane.selection()
                 if (selection.flatMap { it.first }.isNotEmpty()) {
                     translatorPane.add(selection)
-                    translatorPane.invalidate()
                     translatorPane.repaint()
                 }
             }
@@ -233,7 +247,7 @@ private class GalaxyFrame : JFrame("Galaxy") {
                 galaxyPane.repaint()
             }
             galaxyPane.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0), "KEY_P")
-            galaxyPane.actionMap.put("KEY_P", object: AbstractAction() {
+            galaxyPane.actionMap.put("KEY_P", object : AbstractAction() {
                 override fun actionPerformed(e: ActionEvent) {
                     promise.complete(statusBar.real)
                     promise = CompletableFuture()
@@ -245,7 +259,6 @@ private class GalaxyFrame : JFrame("Galaxy") {
             buttonsPane.add(incButton)
             buttonsPane.add(decButton)
 
-            val mainPanel = JPanel()
             mainPanel.layout = BorderLayout()
             mainPanel.add(statusBar, BorderLayout.NORTH)
             mainPanel.add(galaxyScroll, BorderLayout.CENTER)

@@ -2,8 +2,7 @@ package ru.spbstu.draw
 
 import ru.spbstu.sim.Picture
 import java.awt.*
-import java.awt.event.MouseEvent
-import java.awt.event.MouseListener
+import java.awt.event.*
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.swing.*
@@ -111,6 +110,13 @@ private class GalaxyFrame : JFrame("Galaxy") {
                 promise.complete(statusBar.real)
                 promise = CompletableFuture()
             }
+            galaxyPane.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0), "KEY_P")
+            galaxyPane.actionMap.put("KEY_P", object: AbstractAction() {
+                override fun actionPerformed(e: ActionEvent) {
+                    promise.complete(statusBar.real)
+                    promise = CompletableFuture()
+                }
+            })
             buttonsPane.add(backButton)
             buttonsPane.add(sendButton)
 

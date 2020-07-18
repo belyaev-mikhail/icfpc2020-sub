@@ -412,7 +412,31 @@ val k = f
 val c by Fun { f, x, y -> strict(f)(y)(x) }
 val b by Fun { x0, x1, x2 -> strict(x0)(strict(x1)(x2)) }
 
-fun eval(bindings: List<Symbol>, initialState: Symbol, initX: Long, initY: Long) {
+data class State(val x: Long, val y: Long, val state: Symbol)
+
+fun eval(bindings: List<Symbol>, initialState: State) {
+    val states = ArrayDeque<State>()
+    val galaxyDraw = GalaxyDraw()
+    eval(bindings, initialState) { state, pics ->
+        states.addFirst(state)
+        val images = sequenceOf(pics)
+            .flatten()
+            .filterIsInstance<Picture>()
+            .toList()
+
+        val current = galaxyDraw.interact(images)
+        if (current == null) {
+            states.pop()
+            states.pop()
+        } else {
+            val x = current.first.toLong()
+            val y = current.second.toLong()
+            State(x, y, state.state)
+        }
+    }
+}
+
+fun eval(bindings: List<Symbol>, initialState: State, next: (State, Symbol) -> State?) {
     val bindingContext = mutableMapOf<Symbol, Symbol>()
 
     for (binding in bindings) {
@@ -425,39 +449,28 @@ fun eval(bindings: List<Symbol>, initialState: Symbol, initX: Long, initY: Long)
     galaxy as Binding
     println(galaxy)
 
-    val states = ArrayDeque<Pair<Symbol, Pair<Long, Long>>>()
-    var state: Symbol = initialState
-    var curX = initX
-    var curY = initY
+    var (curX, curY, stateSymbol) = initialState
 
-    val galaxyDraw = GalaxyDraw()
+    println("[In] State: $stateSymbol")
+    println("[In] Encoded state: ${encode(stateSymbol)}")
+    println("[In] Coords: $curX -> $curY")
+
     while (true) {
-        println("Coords: $curX -> $curY")
 
-        val (newState, pics) = interact(bindingContext, galaxy.lhs, state, vec(Num(curX))(Num(curY)))
+        val (newState, pics) = interact(bindingContext, galaxy.lhs, stateSymbol, vec(Num(curX))(Num(curY)))
         val answer = newState.exhaustiveEval(bindingContext)
+        val images = pics.exhaustiveEval(bindingContext)
 
-        states.addFirst(state to (curX to curY))
-        state = answer
+        val currentState = State(curX, curY, answer)
+        val nextState = next(currentState, images) ?: return
 
-        println(Protocol().encode(state))
+        curX = nextState.x
+        curY = nextState.y
+        stateSymbol = nextState.state
 
-        val images = sequenceOf(pics.exhaustiveEval(bindingContext))
-            .flatten()
-            .filterIsInstance<Picture>()
-            .toList()
-
-        val current = galaxyDraw.interact(images)
-        if (current == null) {
-            states.pop()
-            val a = states.pop()
-            state = a.first
-            curX = a.second.first
-            curY = a.second.second
-        } else {
-            curX = current.first.toLong()
-            curY = current.second.toLong()
-        }
+        println("State: $stateSymbol")
+        println("Encoded state: ${encode(stateSymbol)}")
+        println("Coords: $curX -> $curY")
     }
 }
 
@@ -544,10 +557,24 @@ fun main() {
     GSMS.serverUrl = "https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=${GSMS.playerKey}"
 
     val aa = parse(File("data/galaxy.txt").readText())
-//    val state = nil
-    val state = decode("1101100001111101111110000000000000000010110011010110000")
-//    val state = decode("11011001011111011000101101011001100110011001100110111111111111111111000000000000000000000000000000000000000000000000000001100011111110101001101101001110000"),
-//    val (x, y) = -3L to -3L
-    val (x, y) = 1L to 4L
-    eval(aa, state, x, y)
+//    val initialState = State(-3L, -3L, nil)
+    val initialState = State(-3L, -3L, decode("1101100001111101111110000000000000000010110011010110000"))
+//    val initialState = State(1L, 4L, decode("11011001011111011000101101011001100110011001100110111111111111111111000000000000000000000000000000000000000000000000000001100011111110101001101101001110000"))
+//    val initialState = State(
+//        46L,
+//        1L,
+//        decode("11011001011111011000111101011001100110011001111011100010010001011011111111111111111100000000000000000000000000000000000000000000000000000101101010011011100110111111000000000000000001001110000")
+//    )
+    eval(aa, initialState)
+//    eval(aa, initialState) { state, _ ->
+//        val prestate = state.state.cdr.car.cdr.cdr.cdr.car.cdr.car
+//        val firstCodeState = prestate.car.cdr.car
+//        val secondCodeState = prestate.cdr.car.cdr.car
+//        println(firstCodeState)
+//        println(secondCodeState)
+//        null
+//    }
 }
+
+val Symbol.car get() = (this as Cons).car
+val Symbol.cdr get() = (this as Cons).cdr

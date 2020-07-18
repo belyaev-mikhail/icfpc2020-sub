@@ -8,6 +8,7 @@ import ru.spbstu.pow
 import ru.spbstu.protocol.Protocol
 import java.io.File
 import kotlin.reflect.KProperty
+import java.util.ArrayDeque
 
 sealed class Symbol {
     open fun subst(mapping: Map<Symbol, Symbol>) = this
@@ -322,6 +323,7 @@ fun eval(bindings: List<Symbol>) {
     galaxy as Binding
     println(galaxy)
 
+    val states = ArrayDeque<Pair<Symbol, Picture>>()
     var isGalaxyComing = false
 
     for (x in -3L..3L) {
@@ -351,17 +353,29 @@ fun eval(bindings: List<Symbol>) {
                     println(Protocol().encode(state))
                 }
 
-                val img = sequenceOf(pics.exhaustiveEval(bc))
+                var img = sequenceOf(pics.exhaustiveEval(bc))
                     .flatten()
                     .filterIsInstance<Picture>()
                     .fold(Picture(setOf())) {
-                        acc, e -> Picture(acc.ones + e.ones)
+                            acc, e -> Picture(acc.ones + e.ones)
                     }
+
+                states.addFirst(state to img)
+
                 if (isGalaxyComing) {
-                    val (currentX, currentY) = GalaxyDraw.interact(img)
-                    curX = currentX.toLong()
-                    curY = currentY.toLong()
-                    println("$curX -> $curY")
+                    while (true) {
+                        val current = GalaxyDraw.interact(img)
+                        if (current == null) {
+                            val a = states.pop()
+                            state = a.first
+                            img = a.second
+                        } else {
+                            curX = current.first.toLong()
+                            curY = current.second.toLong()
+                            println("$curX -> $curY")
+                            break
+                        }
+                    }
                 } else {
                     if (img.ones.isNotEmpty()) {
                         val minX = img.ones.minBy { it.first }!!.first

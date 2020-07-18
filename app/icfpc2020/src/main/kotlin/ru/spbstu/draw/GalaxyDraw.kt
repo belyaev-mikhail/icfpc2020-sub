@@ -10,7 +10,7 @@ import javax.swing.*
 import javax.swing.BoxLayout
 
 
-private const val RECT_WIDTH = 10
+private const val RECT_WIDTH = 5
 private const val RECT_HEIGHT = RECT_WIDTH
 
 private class StatusBar : JPanel() {
@@ -78,10 +78,11 @@ private class GalaxyPane(private val statusBar: StatusBar) : JPanel() {
 }
 
 private class GalaxyFrame : JFrame("Galaxy") {
-    var promise = CompletableFuture<Pair<Int, Int>>()
+    var promise = CompletableFuture<Pair<Int, Int>?>()
 
     val statusBar = StatusBar()
     val galaxyPane = GalaxyPane(statusBar)
+    val buttonsPane = JPanel(FlowLayout())
 
     init {
         SwingUtilities.invokeLater {
@@ -98,11 +99,18 @@ private class GalaxyFrame : JFrame("Galaxy") {
                     galaxyPane.repaint()
                 }
             })
-            val button = Button("send")
-            button.addActionListener {
+            val backButton = Button("back")
+            backButton.addActionListener {
+                promise.complete(null)
+                promise = CompletableFuture()
+            }
+            val sendButton = Button("send")
+            sendButton.addActionListener {
                 promise.complete(statusBar.real)
                 promise = CompletableFuture()
             }
+            buttonsPane.add(backButton)
+            buttonsPane.add(sendButton)
 
             val mainPanel = JPanel()
             mainPanel.layout = BoxLayout(mainPanel, BoxLayout.PAGE_AXIS)
@@ -110,7 +118,7 @@ private class GalaxyFrame : JFrame("Galaxy") {
             mainPanel.add(Box.createRigidArea(Dimension(0, 5)))
             mainPanel.add(JScrollPane(galaxyPane))
             mainPanel.add(Box.createRigidArea(Dimension(0, 5)))
-            mainPanel.add(button)
+            mainPanel.add(buttonsPane)
             mainPanel.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
 
             defaultCloseOperation = EXIT_ON_CLOSE
@@ -125,7 +133,7 @@ private class GalaxyFrame : JFrame("Galaxy") {
 object GalaxyDraw {
     private val galaxyFrame = GalaxyFrame()
 
-    fun interact(vararg pictures: Picture): Pair<Int, Int> {
+    fun interact(vararg pictures: Picture): Pair<Int, Int>? {
         val random = Random(1)
         val left = pictures.mapNotNull { it.ones.map { it.first }.min() }.min()!!.toInt()
         val top = pictures.mapNotNull { it.ones.map { it.second }.min() }.min()!!.toInt()
@@ -143,7 +151,7 @@ object GalaxyDraw {
         return Color(nextInt(256), nextInt(256), nextInt(256), nextInt(256))
     }
 
-    private fun interact(rect: Rectangle, layers: List<Pair<List<Pair<Int, Int>>, Color>>): Pair<Int, Int> {
+    private fun interact(rect: Rectangle, layers: List<Pair<List<Pair<Int, Int>>, Color>>): Pair<Int, Int>? {
         SwingUtilities.invokeLater {
             galaxyFrame.statusBar.shift = rect.x to rect.y
             galaxyFrame.statusBar.size = rect.width to rect.height

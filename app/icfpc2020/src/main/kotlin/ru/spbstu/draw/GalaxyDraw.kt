@@ -6,13 +6,11 @@ import java.awt.event.*
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import javax.swing.*
-import javax.swing.BoxLayout
 
-
-private const val RECT_WIDTH = 7
-private const val RECT_HEIGHT = RECT_WIDTH
 
 private class StatusBar : JPanel() {
+    var scale = 7
+
     val shiftX get() = shift.first
     val shiftY get() = shift.second
     var shift: Pair<Int, Int> = 0 to 0
@@ -62,19 +60,31 @@ private class GalaxyPane(private val statusBar: StatusBar) : JPanel() {
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
         g.color = Color.BLACK
-        g.fillRect(0, 0, statusBar.sizeX * RECT_WIDTH, statusBar.sizeY * RECT_HEIGHT)
+        g.fillRect(0, 0, statusBar.sizeX * statusBar.scale, statusBar.sizeY * statusBar.scale)
         for ((points, color) in layers) {
             g.color = color
             for ((x, y) in points) {
-                g.fillRect(x * RECT_WIDTH, y * RECT_HEIGHT, RECT_WIDTH, RECT_HEIGHT)
+                g.fillRect(x * statusBar.scale, y * statusBar.scale, statusBar.scale, statusBar.scale)
             }
-            g.color = Color.RED
-            g.drawRect(statusBar.currentX * RECT_WIDTH, statusBar.currentY * RECT_HEIGHT, RECT_WIDTH, RECT_HEIGHT)
         }
+        g.color = Color.RED
+        g.drawRect(
+            statusBar.currentX * statusBar.scale,
+            statusBar.currentY * statusBar.scale,
+            statusBar.scale,
+            statusBar.scale
+        )
     }
 
     override fun getPreferredSize(): Dimension {
-        return Dimension(statusBar.sizeX * RECT_WIDTH, statusBar.sizeY * RECT_HEIGHT)
+        return Dimension(statusBar.sizeX * statusBar.scale, statusBar.sizeY * statusBar.scale)
+    }
+}
+
+private class TranslatorPane : JPanel() {
+
+    init {
+
     }
 }
 
@@ -83,32 +93,43 @@ private class GalaxyFrame : JFrame("Galaxy") {
 
     val statusBar = StatusBar()
     val galaxyPane = GalaxyPane(statusBar)
+    val galaxyScroll = JScrollPane(galaxyPane)
     val buttonsPane = JPanel(FlowLayout())
 
     init {
         SwingUtilities.invokeLater {
-            galaxyPane.addMouseListener(object : MouseListener {
-                override fun mousePressed(e: MouseEvent?) {}
-                override fun mouseReleased(e: MouseEvent?) {}
-                override fun mouseEntered(e: MouseEvent?) {}
-                override fun mouseExited(e: MouseEvent?) {}
-                override fun mouseClicked(e: MouseEvent?) {
+            galaxyPane.addMouseListener(object : MouseAdapter() {
+                override fun mousePressed(e: MouseEvent?) {
                     val point = e?.point ?: return
-                    val x = point.x / RECT_WIDTH
-                    val y = point.y / RECT_HEIGHT
+                    val x = point.x / statusBar.scale
+                    val y = point.y / statusBar.scale
                     statusBar.current = x to y
                     galaxyPane.repaint()
                 }
             })
+            val sendButton = Button("send")
+            sendButton.addActionListener {
+                promise.complete(statusBar.real)
+                promise = CompletableFuture()
+            }
             val backButton = Button("back")
             backButton.addActionListener {
                 promise.complete(null)
                 promise = CompletableFuture()
             }
-            val sendButton = Button("send")
-            sendButton.addActionListener {
-                promise.complete(statusBar.real)
-                promise = CompletableFuture()
+            val incButton = Button("+")
+            incButton.addActionListener {
+                if (statusBar.scale++ >= 11) {
+                    statusBar.scale = 10
+                }
+                galaxyPane.repaint()
+            }
+            val decButton = Button("-")
+            decButton.addActionListener {
+                if (statusBar.scale-- <= 0) {
+                    statusBar.scale = 1
+                }
+                galaxyPane.repaint()
             }
             galaxyPane.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0), "KEY_P")
             galaxyPane.actionMap.put("KEY_P", object: AbstractAction() {
@@ -119,14 +140,14 @@ private class GalaxyFrame : JFrame("Galaxy") {
             })
             buttonsPane.add(backButton)
             buttonsPane.add(sendButton)
+            buttonsPane.add(incButton)
+            buttonsPane.add(decButton)
 
             val mainPanel = JPanel()
-            mainPanel.layout = BoxLayout(mainPanel, BoxLayout.PAGE_AXIS)
-            mainPanel.add(statusBar)
-            mainPanel.add(Box.createRigidArea(Dimension(0, 5)))
-            mainPanel.add(JScrollPane(galaxyPane))
-            mainPanel.add(Box.createRigidArea(Dimension(0, 5)))
-            mainPanel.add(buttonsPane)
+            mainPanel.layout = BorderLayout()
+            mainPanel.add(statusBar, BorderLayout.NORTH)
+            mainPanel.add(galaxyScroll, BorderLayout.CENTER)
+            mainPanel.add(buttonsPane, BorderLayout.SOUTH)
             mainPanel.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
 
             defaultCloseOperation = EXIT_ON_CLOSE
@@ -134,6 +155,7 @@ private class GalaxyFrame : JFrame("Galaxy") {
             pack()
             isLocationByPlatform = true
             isVisible = true
+            size = Dimension(1280, 1024)
         }
     }
 }
@@ -174,7 +196,8 @@ object GalaxyDraw {
             galaxyFrame.statusBar.shift = rect.x to rect.y
             galaxyFrame.statusBar.size = rect.width to rect.height
             galaxyFrame.galaxyPane.layers = layers
-            galaxyFrame.galaxyPane.repaint()
+            galaxyFrame.galaxyScroll.invalidate()
+            galaxyFrame.galaxyScroll.repaint()
         }
         return galaxyFrame.promise.get()
     }

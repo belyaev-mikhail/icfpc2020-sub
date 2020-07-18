@@ -362,6 +362,7 @@ fun eval(bindings: List<Symbol>) {
                 if (isGalaxyComing) {
                     val current = GalaxyDraw.interact(imgs)
                     if (current == null) {
+                        states.pop()
                         val a = states.pop()
                         state = a.first
                         curX = a.second.first

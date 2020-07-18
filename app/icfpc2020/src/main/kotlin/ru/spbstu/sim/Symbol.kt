@@ -234,7 +234,7 @@ val vec = cons
 
 fun Sequence<Symbol>.flatten(): Sequence<Symbol> {
     return flatMap { cell ->
-        if (cell !is Cons) return@flatMap sequenceOf<Symbol>()
+        if (cell !is Cons) return@flatMap sequenceOf<Symbol>(cell)
         val (x, y) = cell
 
         if (x is Num && y is Num) return@flatMap sequenceOf(cell)
@@ -304,18 +304,56 @@ fun eval(bindings: List<Symbol>) {
     galaxy as Binding
     println(galaxy)
 
-    var state: Symbol = nil
+    for (x in -3L..3L) {
+        for (y in -3L..3L) {
+            println("=== $x $y ===")
 
-    while (true) {
-        val bc = bindingContext.toMutableMap()
+            var state: Symbol = nil
+            var curX = x
+            var curY = y
 
-        var task = interact(bc, galaxy.lhs, state, vec(Num(0))(Num(0)))
-        val answer = task.exhaustiveEval(bc)
-        println(answer)
+            while (true) {
+                val bc = bindingContext.toMutableMap()
 
-        if (answer == state) break
+                val (newState, pics) = interact(bc, galaxy.lhs, state, vec(Num(curX))(Num(curY)))
+                val answer = newState.exhaustiveEval(bc)
 
-        state = answer
+                // if (answer == state) break
+
+                println(answer)
+
+                state = answer
+
+                if (car(state).exhaustiveEval(bc) == Num(2)) {
+                    println("STATE INCOMING!!!")
+                    println(Protocol().encode(state))
+                }
+
+                val imgs = sequenceOf(pics.exhaustiveEval(bc))
+                    .flatten()
+                    .filterIsInstance<Picture>()
+
+                imgs.forEach { println(it) }
+
+                for (img in imgs) {
+                    if (img.ones.size < 1) continue
+
+                    val minX = img.ones.minBy { it.first }!!
+                    val minY = img.ones.minBy { it.second }!!
+
+                    val maxX = img.ones.maxBy { it.first }!!
+                    val maxY = img.ones.maxBy { it.second }!!
+
+                    val lb = minX.first to minY.second
+                    val rt = maxX.first to maxY.second
+
+                    curX = minY.first
+                    curY = minX.second
+
+                    println("$curX -> $curY")
+                }
+            }
+        }
     }
 }
 
@@ -328,31 +366,34 @@ fun Symbol.exhaustiveEval(mapping: MutableMap<Symbol, Symbol>): Symbol {
     return current
 }
 
-fun f38(bindingContext: MutableMap<Symbol, Symbol>, protocol: Symbol, res: Symbol): Symbol {
+fun f38(bindingContext: MutableMap<Symbol, Symbol>, protocol: Symbol, res: Symbol): Pair<Symbol, Symbol> {
     val flag = car(res).exhaustiveEval(bindingContext)
     val newState = car(cdr(res)).exhaustiveEval(bindingContext)
     val data = cdr(cdr(res)).exhaustiveEval(bindingContext)
 
-    println(flag)
-    println(newState)
-    println(data)
+    //println(flag)
+    //println(newState)
+    //println(data)
 
     if (flag == Num(0)) {
         val p = Protocol()
         val modem = p.decode(p.encode(newState))
         val pics = multipledraw(data)
 
-        println(pics.exhaustiveEval(bindingContext))
-
-        return modem
-
-        return cons(modem)(cons(pics)(nil))
+        return modem to pics
     }
 
-    return nil
+    TODO("FUCK")
+
+    return nil to nil
 }
 
-fun interact(bindingContext: MutableMap<Symbol, Symbol>, protocol: Symbol, state: Symbol, point: Symbol): Symbol {
+fun interact(
+    bindingContext: MutableMap<Symbol, Symbol>,
+    protocol: Symbol,
+    state: Symbol,
+    point: Symbol
+): Pair<Symbol, Symbol> {
     return f38(bindingContext, protocol, protocol(state)(point).exhaustiveEval(bindingContext))
 }
 

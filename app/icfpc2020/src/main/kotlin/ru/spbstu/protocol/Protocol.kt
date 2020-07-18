@@ -57,6 +57,7 @@ class Protocol {
                 when {
                     msg.number == 0L -> return "010"
                     msg.number == 1L -> return "01100001"
+                    msg.number == -1L -> return "10100001"
                 }
 
                 val res = StringBuilder()

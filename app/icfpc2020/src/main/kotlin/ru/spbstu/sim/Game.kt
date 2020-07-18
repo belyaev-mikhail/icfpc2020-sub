@@ -64,6 +64,8 @@ data class GameResponse(
 class Game {
     private val client = OkHttpClient()
     private fun send(request: GameRequest): GameResponse {
+        System.err.println(GSMS.serverUrl)
+        System.err.println("${GSMS.playerKey}")
         System.err.println("$request")
         System.err.println("${request.symbol()}")
         val requestData = request.modulate()

@@ -2,8 +2,6 @@ package ru.spbstu.draw
 
 import ru.spbstu.sim.Picture
 import java.awt.*
-import java.awt.event.KeyAdapter
-import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.util.*
@@ -81,6 +79,13 @@ private class GalaxyPane(private val statusBar: StatusBar) : JPanel() {
 
     override fun getPreferredSize(): Dimension {
         return Dimension(statusBar.sizeX * statusBar.scale, statusBar.sizeY * statusBar.scale)
+    }
+}
+
+private class TranslatorPane : JPanel() {
+
+    init {
+
     }
 }
 
@@ -186,6 +191,7 @@ object GalaxyDraw {
             galaxyFrame.statusBar.size = rect.width to rect.height
             galaxyFrame.galaxyPane.layers = layers
             galaxyFrame.galaxyScroll.invalidate()
+            galaxyFrame.galaxyScroll.repaint()
         }
         return galaxyFrame.promise.get()
     }

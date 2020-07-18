@@ -62,18 +62,20 @@ private class GalaxyPane(private val statusBar: StatusBar) : JPanel() {
 
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
+        g.color = Color.BLACK
+        g.fillRect(0, 0, statusBar.sizeX * RECT_WIDTH, statusBar.sizeY * RECT_HEIGHT)
         for ((points, color) in layers) {
             g.color = color
             for ((x, y) in points) {
-                g.fillRect(x * RECT_WIDTH, y * RECT_WIDTH, RECT_WIDTH, RECT_HEIGHT)
+                g.fillRect(x * RECT_WIDTH, y * RECT_HEIGHT, RECT_WIDTH, RECT_HEIGHT)
             }
-            g.color = Color.GRAY
-            g.drawRect(statusBar.currentX * RECT_WIDTH - 1, statusBar.currentY * RECT_WIDTH - 1, RECT_WIDTH + 2, RECT_HEIGHT + 2)
+            g.color = Color.RED
+            g.drawRect(statusBar.currentX * RECT_WIDTH, statusBar.currentY * RECT_HEIGHT, RECT_WIDTH, RECT_HEIGHT)
         }
     }
 
     override fun getPreferredSize(): Dimension {
-        return Dimension(statusBar.sizeX * RECT_WIDTH, statusBar.sizeY * RECT_WIDTH)
+        return Dimension(statusBar.sizeX * RECT_WIDTH, statusBar.sizeY * RECT_HEIGHT)
     }
 }
 
@@ -136,10 +138,10 @@ object GalaxyDraw {
     private val colors: Sequence<Color>
         get() = sequence {
             val random = Random(1)
-            yield(Color.BLACK)
-            yield(Color.RED.brighter())
-            yield(Color.YELLOW.brighter())
-            yield(Color.GREEN.brighter())
+            yield(Color.WHITE)
+            yield(Color.LIGHT_GRAY)
+            yield(Color.GRAY)
+            yield(Color.DARK_GRAY)
             while (true) {
                 with(random) {
                     yield(Color(nextInt(256), nextInt(256), nextInt(256), nextInt(256)))
@@ -150,8 +152,8 @@ object GalaxyDraw {
     fun interact(pictures: List<Picture>): Pair<Int, Int>? {
         val left = pictures.mapNotNull { it.ones.map { it.first }.min() }.min()!!.toInt()
         val top = pictures.mapNotNull { it.ones.map { it.second }.min() }.min()!!.toInt()
-        val right = pictures.mapNotNull { it.ones.map { it.first }.max() }.max()!!.toInt()
-        val bottom = pictures.mapNotNull { it.ones.map { it.second }.max() }.max()!!.toInt()
+        val right = pictures.mapNotNull { it.ones.map { it.first }.max() }.max()!!.toInt() + 1
+        val bottom = pictures.mapNotNull { it.ones.map { it.second }.max() }.max()!!.toInt() + 1
         val layers = pictures.zip(colors.take(pictures.size).toList()).reversed()
                 .map { (pic, color) ->
                     pic.ones

@@ -186,6 +186,7 @@ private class TranslatorPane(private val statusBar: StatusBar) : JPanel() {
 private class GalaxyFrame : JFrame("Galaxy") {
     var promise = CompletableFuture<Pair<Int, Int>?>()
 
+    val mainPanel = JPanel()
     val statusBar = StatusBar()
     val galaxyPane = GalaxyPane(statusBar)
     val translatorPane = TranslatorPane(statusBar)
@@ -228,8 +229,7 @@ private class GalaxyFrame : JFrame("Galaxy") {
                 val selection = galaxyPane.selection()
                 if (selection.flatMap { it.first }.isNotEmpty()) {
                     translatorPane.add(selection)
-                    translatorScroll.repaint()
-                    galaxyScroll.repaint()
+                    translatorPane.repaint()
                 }
             }
             val incButton = Button("+")
@@ -238,7 +238,6 @@ private class GalaxyFrame : JFrame("Galaxy") {
                     statusBar.scale = 10
                 }
                 galaxyPane.repaint()
-                translatorScroll.repaint()
             }
             val decButton = Button("-")
             decButton.addActionListener {
@@ -246,7 +245,6 @@ private class GalaxyFrame : JFrame("Galaxy") {
                     statusBar.scale = 1
                 }
                 galaxyPane.repaint()
-                translatorScroll.repaint()
             }
             galaxyPane.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, 0), "KEY_P")
             galaxyPane.actionMap.put("KEY_P", object : AbstractAction() {
@@ -261,7 +259,6 @@ private class GalaxyFrame : JFrame("Galaxy") {
             buttonsPane.add(incButton)
             buttonsPane.add(decButton)
 
-            val mainPanel = JPanel()
             mainPanel.layout = BorderLayout()
             mainPanel.add(statusBar, BorderLayout.NORTH)
             mainPanel.add(galaxyScroll, BorderLayout.CENTER)

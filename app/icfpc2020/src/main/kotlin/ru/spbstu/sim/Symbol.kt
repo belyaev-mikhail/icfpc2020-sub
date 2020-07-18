@@ -67,13 +67,24 @@ data class Fun(val name: String?, val interp: EvaluationContext.(Symbol) -> Symb
     constructor(interp: EvaluationContext.(Symbol, Symbol, Symbol, Symbol) -> Symbol) :
             this({ a -> Fun { b -> Fun { c -> Fun { d -> interp(a, b, c, d) } } } })
 
-    override fun toString(): String = name ?: interp.toString()
+    companion object FunNaming {
+        var counter = 0
+        fun freshVar() = Var("$${++counter}")
+    }
+    override fun toString(): String = name ?: run {
+        with(EvaluationContext(mutableMapOf(), dryRun = true)) {
+            val v = freshVar()
+            val app = interp(v)
+            "$v -> $app"
+        }
+    }
 
     operator fun getValue(self: Any?, prop: KProperty<*>) = copy(name = prop.name)
 }
 
-class EvaluationContext(val mapping: MutableMap<Symbol, Symbol>) {
+class EvaluationContext(val mapping: MutableMap<Symbol, Symbol>, val dryRun: Boolean = false) {
     fun strict(sym: Symbol): Symbol {
+        if(dryRun) return sym
         val cached = mapping[sym] ?: sym
 
         val res = cached.exhaustiveEval(mapping)
@@ -137,6 +148,8 @@ data class Var(val name: String) : Symbol() {
             return ret
         } else return this
     }
+
+    override fun toString(): String = name
 }
 
 data class Picture(val ones: Set<Pair<Long, Long>>) : Symbol() {

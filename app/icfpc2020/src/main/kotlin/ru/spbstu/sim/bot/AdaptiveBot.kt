@@ -2,6 +2,7 @@ package ru.spbstu.sim.bot
 
 import ru.spbstu.sim.*
 import java.lang.Integer.min
+import kotlin.math.pow
 
 fun computeDefenderStats(maxStats: Int): ShipState {
     var availableStats = maxStats - 2
@@ -22,8 +23,9 @@ fun computeDefenderStats(maxStats: Int): ShipState {
 }
 
 fun computeAttackerStats(maxStats: Int): ShipState {
-    var availableStats = maxStats - 2
-    val copies = 1
+    var availableStats = maxStats - 1
+    val copies = 4
+    availableStats -= 2.0.pow(copies).toInt() - 1
 
     var fuel = min(256, availableStats)
     availableStats -= fuel
@@ -39,7 +41,7 @@ fun computeAttackerStats(maxStats: Int): ShipState {
     return ShipState(fuel, attack, cooling, copies)
 }
 
-class AdaptiveBot (val attackerBot: Bot, val defenderBot: Bot): Bot {
+class AdaptiveBot(val attackerBot: Bot, val defenderBot: Bot) : Bot {
     lateinit var currentBot: Bot
     override fun initialShipState(mapState: MapState) = when (mapState.role) {
         GameRole.DEFENDER -> {

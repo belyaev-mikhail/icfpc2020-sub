@@ -16,7 +16,8 @@ fun main(args: Array<String>) {
             ShipState(256, 0, 0, 1),
             StandingBot(),
             ShootingBot(0.0),
-            ExplodingBot()
+            ExplodingBot(),
+            CopyCoolerBot()
         ),
         CompositeBot(
             ShipState(256, 0, 15, 1),

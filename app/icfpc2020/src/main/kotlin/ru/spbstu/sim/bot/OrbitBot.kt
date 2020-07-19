@@ -23,15 +23,21 @@ class OrbitBot : AbstractBot() {
                 abs(truncVelocity.x) > 5 * ACCELERATION -> acceleration += Coordinates(-gravity.x, 0)
             }
             when {
-                isCompensateY -> acceleration += Coordinates(0, -gravity.y)
+                !isCompensateX && isCompensateY -> acceleration += Coordinates(0, -gravity.y)
                 abs(truncVelocity.y) < 2 * ACCELERATION -> acceleration += Coordinates(0, gravity.y)
                 abs(truncVelocity.y) > 5 * ACCELERATION -> acceleration += Coordinates(0, -gravity.y)
             }
-            println("$isCompensateX $isCompensateY $isAbovePlanet $gravity")
+            println("tick=${gameState.tick} " +
+                    "velocity=${ship.velocity} " +
+                    "truncVelocity=$truncVelocity " +
+                    "gravity=$gravity" +
+                    "isCompensateX=$isCompensateX " +
+                    "isCompensateY=$isCompensateY " +
+                    "isAbovePlanet=$isAbovePlanet ")
 
             when {
                 acceleration.isZero() -> emptyList()
-                else -> listOf(ShipCommand.Accelerate(ship.id, -acceleration))
+                else -> listOf(ShipCommand.Accelerate(ship.id, acceleration))
             }
         }
     }

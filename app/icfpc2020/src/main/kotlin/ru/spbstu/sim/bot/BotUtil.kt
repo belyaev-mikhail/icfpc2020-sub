@@ -16,5 +16,7 @@ fun gravity(relTo: Coordinates): Coordinates {
 }
 
 fun isAbovePlanet(relTo: Coordinates, planetRadius: Long): Boolean {
-    return abs(relTo.x) < planetRadius || abs(relTo.y) < planetRadius
+    return abs(relTo.x) < planetRadius
+            || abs(relTo.y) < planetRadius
+            || abs(relTo.x) == abs(relTo.y)
 }

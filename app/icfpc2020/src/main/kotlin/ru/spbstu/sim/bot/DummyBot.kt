@@ -3,7 +3,7 @@ package ru.spbstu.sim.bot
 import ru.spbstu.sim.*
 
 class DummyBot : Bot {
-    override fun initialShipState(mapState: MapState): ShipState = ShipState(400, 95, 20, 3)
+    override fun initialShipState(mapState: MapState): ShipState = ShipState(200, 20, 10, 3)
 
     override fun step(gameState: GameState, mapState: MapState): List<ShipCommand> {
         val myRole = mapState.role

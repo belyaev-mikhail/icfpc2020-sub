@@ -14,8 +14,8 @@ class ExplodingBot : AbstractBot() {
             sum < 1 -> 0
             sum == 1 -> 4
             sum == 2 -> 5
-            sum == 3 -> 5
-            sum in 4..15 -> 8
+            sum in 3..14 -> 5
+            sum in 15..510 -> 8
             else -> 12
         }
     }
@@ -26,8 +26,8 @@ class ExplodingBot : AbstractBot() {
             sum < 1 -> 0
             sum == 1 -> 128
             sum == 2 -> 161
-            sum == 3 -> 181
-            sum in 4..15 -> 256
+            sum in 3..14 -> 181
+            sum in 15..510 -> 256
             else -> 384
         }
     }

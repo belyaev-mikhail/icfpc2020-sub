@@ -1,9 +1,7 @@
 package ru.spbstu
 
-import ru.spbstu.sim.GSMS
-import ru.spbstu.sim.Game
-import ru.spbstu.sim.eval
-import ru.spbstu.sim.parse
+import ru.spbstu.sim.*
+import ru.spbstu.sim.bot.EmptyBot
 import java.io.File
 
 fun main(args: Array<String>) {
@@ -14,7 +12,8 @@ fun main(args: Array<String>) {
     GSMS.serverUrl = serverUrl
     GSMS.playerKey = playerKey
 
-    val game = Game()
+    val bot = EmptyBot(ShipState(216, 0, 4, 1 ))
+    val game = Game(bot)
     game.loop()
 }
 

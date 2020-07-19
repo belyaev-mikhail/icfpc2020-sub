@@ -4,18 +4,18 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import ru.spbstu.protocol.Protocol
-import kotlin.random.Random
+import ru.spbstu.sim.bot.Bot
 
 interface GameRequest {
     fun symbol(): Symbol
     fun modulate() = Protocol().encode(symbol())
 }
 
-data class ShipState(val fuel: Int, val power: Int, val coolPerTick: Int, val unknown: Int) {
+data class ShipState(val fuel: Int, val power: Int, val coolPerTick: Int, val numberOfCopies: Int) {
     val isDead: Boolean
-        get() = listOf(fuel, power, coolPerTick, unknown).all { it == 0 }
+        get() = listOf(fuel, power, coolPerTick, numberOfCopies).all { it == 0 }
 
-    fun asSymbol(): Symbol = consListOf(listOf(fuel, power, coolPerTick, unknown).map { Num(it.toLong()) })
+    fun asSymbol(): Symbol = consListOf(listOf(fuel, power, coolPerTick, numberOfCopies).map { Num(it.toLong()) })
 
     companion object {
         fun fromSymbol(symbol: Symbol): ShipState {
@@ -160,8 +160,8 @@ data class GameShip(
     val velocity: Coordinates,
     val state: ShipState,
     val unknown1: Symbol,
-    val unknown2: Symbol,
-    val unknown3: Symbol,
+    val heatingBonus: Symbol,
+    val accelerationBonus: Symbol,
     val commands: List<ShipCommand>
 ) {
     val isDead: Boolean
@@ -209,7 +209,7 @@ private fun Symbol.asLongList() = asList().filterIsInstance<Num>().map { it.asLo
 private fun Symbol.asLong() = (this as Num).number
 
 
-class Game {
+class Game(val bot: Bot) {
     private val client = OkHttpClient()
     private fun send(request: GameRequest): GameResponse? {
         System.err.println("$request")
@@ -229,8 +229,8 @@ class Game {
     }
 
     open fun join() = JoinRequest(emptyList())
-    open fun start(state: GameResponse): StartRequest = StartRequest(ShipState(216, 0, 4, 1 ))
-    open fun command(state: GameResponse) = ShipCommandRequest(emptyList())
+    open fun start(state: GameResponse): StartRequest = StartRequest(bot.initialShipState(state.gameState, state.mapState))
+    open fun command(state: GameResponse) = ShipCommandRequest(bot.step(state.gameState, state.mapState))
 
     fun loop() {
         val join = join()

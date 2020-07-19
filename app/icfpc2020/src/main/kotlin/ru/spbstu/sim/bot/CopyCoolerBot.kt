@@ -15,7 +15,7 @@ class CopyCoolerBot : AbstractBot() {
                 }
             }
 
-            if (ship.heatLevel.long() + additionalCooling < ship.maxHeatingLevel.long()) return@step listOf()
+            if (ship.heatLevel + additionalCooling < ship.maxHeatingLevel) return@step listOf()
 
             if (ship.state.numberOfCopies == 1) return@step listOf()
 

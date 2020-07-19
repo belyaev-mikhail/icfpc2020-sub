@@ -19,7 +19,7 @@ class StandingBot : AbstractBot() {
     }
 
     init {
-        step { ship, _, _ ->
+        step { ship, _, _, _ ->
             val velocity = gravity(ship.position)
             listOf(ShipCommand.Accelerate(ship.id, velocity + velocity.randomVector))
         }

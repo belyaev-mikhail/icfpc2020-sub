@@ -35,10 +35,16 @@ class ShootingBot(val initialShipState: ShipState, val eps: Double) : AbstractBo
     override fun initialShipState(mapState: MapState) = initialShipState
 
     init {
-        step { ally, gameState, mapState ->
+        step { ally, gameState, mapState, previousCommands ->
+            val currentTurnHeatLevel = previousCommands.map {
+                when (it) {
+                    is ShipCommand.Accelerate -> 8
+                    else -> 0
+                }
+            }.sum()
             val power = min(
                 ally.state.power.toLong(),
-                ((ally.maxHeatingLevel - (ally.heatLevel - Num(ally.state.coolPerTick.toLong()))) as Num).number
+                ((ally.maxHeatingLevel - (Num(currentTurnHeatLevel.toLong()) + ally.heatLevel - Num(ally.state.coolPerTick.toLong()))) as Num).number
             )
             if (power == 0L) return@step listOf()
 

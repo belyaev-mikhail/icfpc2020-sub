@@ -10,7 +10,7 @@ class OrbitBot : AbstractBot() {
     override fun initialShipState(mapState: MapState) = ShipState(300, 0, 8, 1)
 
     init {
-        step { ship, gameState, mapState ->
+        step { ship, gameState, mapState, previousCommands ->
             val gravity = gravity(ship.position)
             var acceleration = Coordinates(0, 0)
             val nextVelocity = ship.velocity + gravity

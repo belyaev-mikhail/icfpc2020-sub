@@ -8,7 +8,7 @@ class SplitterBot : AbstractBot() {
     init {
         val splitAfter = (0..10).random()
 
-        step { ship, gameState, mapState ->
+        step { ship, gameState, mapState, previousCommands ->
             if (gameState.tick < splitAfter) return@step listOf()
 
             if (ship.state.numberOfCopies == 1) return@step listOf()

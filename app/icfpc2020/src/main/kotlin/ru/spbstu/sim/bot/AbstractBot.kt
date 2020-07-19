@@ -2,7 +2,7 @@ package ru.spbstu.sim.bot
 
 import ru.spbstu.sim.*
 
-typealias StepAction = (GameShip, GameState, MapState) -> List<ShipCommand>
+typealias StepAction = (GameShip, GameState, MapState, List<ShipCommand>) -> List<ShipCommand>
 
 abstract class AbstractBot : Bot {
     private val ships = HashMap<Long, Int>()
@@ -18,8 +18,8 @@ abstract class AbstractBot : Bot {
         val commands = ArrayList<ShipCommand>()
         for (ship in allyShips) {
             val shipOrderNumber = ships[ship.id]!!
-            stepActions[null]?.forEach { commands.addAll(it(ship, gameState, mapState)) }
-            stepActions[shipOrderNumber]?.forEach { commands.addAll(it(ship, gameState, mapState)) }
+            stepActions[null]?.forEach { commands.addAll(it(ship, gameState, mapState, commands)) }
+            stepActions[shipOrderNumber]?.forEach { commands.addAll(it(ship, gameState, mapState, commands)) }
         }
         return commands
     }

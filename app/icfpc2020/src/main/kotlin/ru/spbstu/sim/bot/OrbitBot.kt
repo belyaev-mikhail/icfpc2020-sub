@@ -13,11 +13,12 @@ class OrbitBot : AbstractBot() {
         step { ship, gameState, mapState ->
             val velocity = ship.velocity
             val position = ship.position
-            val nextPosition = ship.position + velocity
+            val nextPosition = position + velocity
+            val gravity = gravity(nextPosition)
+            val nextVelocity = velocity + gravity
             val planetRadius = mapState.planeRadius
-            val gravity = gravity(ship.position)
             var acceleration = Coordinates(0, 0)
-            val truncVelocity = ship.velocity * gravity
+            val truncVelocity = nextVelocity * gravity
             val isCompensateX = abs(nextPosition.y) < planetRadius && truncVelocity.x > 0
             val isCompensateY = abs(nextPosition.x) < planetRadius && truncVelocity.y > 0
             val isCompensateXY = abs(nextPosition.x) == abs(nextPosition.y) && (truncVelocity.x > 0 && truncVelocity.y > 0)
@@ -45,7 +46,7 @@ class OrbitBot : AbstractBot() {
 
             when {
                 acceleration.isZero() -> emptyList()
-                else -> listOf(ShipCommand.Accelerate(ship.id, -acceleration))
+                else -> listOf(ShipCommand.Accelerate(ship.id, acceleration))
             }
         }
     }

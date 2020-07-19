@@ -35,10 +35,12 @@ class ExplodingBot : AbstractBot() {
     init {
         step { gameShip, gameState, mapState, list ->
             val enemyShips = gameState.ships.filter { it.role != mapState.role }
+            if (enemyShips.size != 1) return@step listOf()
 
+            val enemy = enemyShips.first()
             val explosionRadius = gameShip.explosionRadius
             when {
-                enemyShips.any { it.position.manhattanDist(gameShip.position) <= explosionRadius } -> {
+                enemy.position.manhattanDist(gameShip.position) <= explosionRadius -> {
                     listOf(ShipCommand.Detonate(gameShip.id))
                 }
                 else -> listOf()

@@ -509,11 +509,8 @@ fun f38(bindingContext: MutableMap<Symbol, Symbol>, protocol: Symbol, res: Symbo
     } else {
         val client = OkHttpClient()
 
-        val flattenedData = consListOf(sequenceOf(data).flatten().iterator())
-        println(Protocol().encode(flattenedData))
-
         val request =
-            Request.Builder().url(GSMS.serverUrl).post(Protocol().encode(flattenedData).toRequestBody()).build()
+            Request.Builder().url(GSMS.serverUrl).post(Protocol().encode(data).toRequestBody()).build()
         val response = client.newCall(request).execute()
         val status = response.code
         val body = response.body ?: TODO("FUCK")

@@ -6,6 +6,7 @@ import ru.spbstu.sim.ShipCommand
 import ru.spbstu.sim.ShipState
 
 interface Bot {
-    fun initialShipState(gameState: GameState, mapState: MapState): ShipState
+    fun prepare(mapState: MapState) {}
+    fun initialShipState(mapState: MapState): ShipState
     fun step(gameState: GameState, mapState: MapState): List<ShipCommand>
 }

@@ -32,6 +32,12 @@ class ExplodingBot : AbstractBot() {
         }
     }
 
+    private val GameShip.approximateHealth: Int get() {
+        var health = state.sum()
+        health += (this.maxHeatingLevel - this.heatLevel + this.state.coolPerTick.toLong()).toInt()
+        return health
+    }
+
     private val GameShip.isShrapnel: Boolean get() = this.state.sum() <= 3
     private fun GameShip.canReach(other: GameShip) = other.position.manhattanDist(this.position) <= this.explosionRadius
 
@@ -49,7 +55,7 @@ class ExplodingBot : AbstractBot() {
                     if (enemyShips.size != 1) return@step listOf()
                     val enemy = enemyShips.first()
                     when {
-                        gameShip.canReach(enemy) -> listOf(ShipCommand.Detonate(gameShip.id))
+                        gameShip.canReach(enemy) && enemy.approximateHealth <= gameShip.explosionDamage -> listOf(ShipCommand.Detonate(gameShip.id))
                         else -> listOf()
                     }
                 }

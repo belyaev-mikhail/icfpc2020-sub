@@ -11,7 +11,21 @@ interface GameRequest {
     fun modulate() = Protocol().encode(symbol())
 }
 
-data class Join(val arguments: List<Symbol>) : GameRequest {
+data class ShipState(val fuel: Int, val power: Int, val coolPerTick: Int, val unknown: Int) {
+    val isDead: Boolean
+        get() = listOf(fuel, power, coolPerTick, unknown).all { it == 0 }
+
+    fun asSymbol(): Symbol = consListOf(listOf(fuel, power, coolPerTick, unknown).map { Num(it.toLong()) })
+
+    companion object {
+        fun fromSymbol(symbol: Symbol): ShipState {
+            val (a, b, c, d) = symbol.asLongList().map { it.toInt() }
+            return ShipState(a, b, c, d)
+        }
+    }
+}
+
+data class JoinRequest(val arguments: List<Symbol>) : GameRequest {
     override fun symbol() = consListOf(
         Num(2),
         Num(GSMS.playerKey.toLong()),
@@ -19,19 +33,19 @@ data class Join(val arguments: List<Symbol>) : GameRequest {
     )
 }
 
-data class Start(val number1: Long, val number2: Long, val number3: Long, val number4: Long) : GameRequest {
+data class StartRequest(val shipState: ShipState) : GameRequest {
     override fun symbol() = consListOf(
         Num(3),
         Num(GSMS.playerKey.toLong()),
-        consListOf(listOf(number1, number2, number3, number4).map { Num(it) })
+        shipState.asSymbol()
     )
 }
 
-data class ShipCommand(val commands: List<Symbol>) : GameRequest {
+data class ShipCommandRequest(val commands: List<ShipCommand>) : GameRequest {
     override fun symbol() = consListOf(
         Num(4),
         Num(GSMS.playerKey.toLong()),
-        consListOf(commands)
+        consListOf(commands.map { it.asSymbol() })
     )
 }
 
@@ -39,31 +53,161 @@ enum class GameStage {
     NOT_STARTED, STARTED, FINISHED;
 }
 
+enum class GameRole {
+    ATTACKER, DEFENDER;
+}
+
+data class MapState(
+    val tickLimit: Long,
+    val role: GameRole,
+    val mapParams1: List<Long>,
+    val mapParams2: List<Long>,
+    val mapParams3: List<Long>
+)
+
+data class GameState(
+    val x: Long,
+    val unknownParam: List<Long>,
+    val ships: List<GameShip>
+)
+
 data class GameResponse(
     val status: Long,
     val stage: GameStage,
-    val constantUnknownList: Symbol,
-    val maybeStateOfGame: Symbol
+    val mapState: MapState,
+    val gameStateUnsafe: GameState?
 ) {
+    val gameState: GameState
+        get() = when (stage) {
+            GameStage.STARTED -> gameStateUnsafe!!
+            else -> throw IllegalStateException("game is not started")
+        }
+
     companion object {
         fun valueOf(symbol: Symbol): GameResponse? {
-            var cons = symbol as Cons
-            val status = (cons.car as Num).number
+            val gameResponse = symbol.asList()
+            val status = gameResponse.first().asLong()
             if (status != 1L) {
                 System.err.println("Incorrect response: $symbol")
                 return null
             }
-            cons = cons.cdr as Cons
-            val stageIndex = (cons.car as Num).number.toInt()
-            val stage = GameStage.values()[stageIndex]
-            cons = cons.cdr as Cons
-            val unknownList1 = cons.car
-            cons = cons.cdr as Cons
-            val unknownList2 = cons.car
-            return GameResponse(status, stage, unknownList1, unknownList2)
+            val (_, stageIndexSym, mapStateSym, gameStateSym) = gameResponse
+            val stage = GameStage.values()[stageIndexSym.asLong().toInt()]
+            val mapState = parseMapState(mapStateSym)
+            val gameState = parseGameState(gameStateSym)
+            return GameResponse(status, stage, mapState, gameState)
+        }
+
+        private fun parseMapState(symbol: Symbol): MapState {
+            val mapState = symbol.asList()
+            val (tickLimitSym, roleSym, mapParams1Sym, mapParams2Sym, mapParams3Sym) = mapState
+            val mapParams1 = mapParams1Sym.asLongList()
+            val mapParams2 = mapParams2Sym.asLongList()
+            val mapParams3 = mapParams3Sym.asLongList()
+            val role = GameRole.values()[roleSym.asLong().toInt()]
+            return MapState(tickLimitSym.asLong(), role, mapParams1, mapParams2, mapParams3)
+        }
+
+        private fun parseGameState(symbol: Symbol): GameState? {
+            val gameState = symbol.asList()
+            if (gameState.isEmpty()) return null
+            val (tickSym, unknownParamSym, shipsSym) = gameState
+            val unknownParam = unknownParamSym.asLongList()
+            val ships = shipsSym.asList().mapNotNull { parseShipData(it) }
+            return GameState(tickSym.asLong(), unknownParam, ships)
+        }
+
+        private fun parseShipData(shipData: Symbol): GameShip? {
+            if (shipData.asList().isEmpty()) return null
+            val (shipStateSym, shipCommandsSym) = shipData.asList()
+            val (roleSym, shipIdSym, positionSym, velocitySym, stateSym) = shipStateSym.asList()
+            val (unknown1, unknown2, unknown3) = shipStateSym.asList().drop(5)
+            val shipId = shipIdSym.asLong()
+            val commands = shipCommandsSym.asList().mapNotNull { parseShipCommand(shipId, it) }
+            val role = GameRole.values()[roleSym.asLong().toInt()]
+            val state = ShipState.fromSymbol(stateSym)
+            return GameShip(
+                shipId, role, positionSym.coords(), velocitySym.coords(),
+                state, unknown1, unknown2, unknown3, commands
+            )
+        }
+
+        private fun parseShipCommand(shipId: Long, shipCommandData: Symbol): ShipCommand? {
+            val commandParams = shipCommandData.asList()
+            if (commandParams.isEmpty()) return null
+            val type = CommandType.values()[commandParams.first().asLong().toInt()]
+            return when (type) {
+                CommandType.ACCELERATE -> ShipCommand.Accelerate(shipId, commandParams[1].coords())
+                CommandType.DETONATE -> ShipCommand.Detonate(shipId)
+                CommandType.SHOOT -> ShipCommand.Shoot(
+                    shipId,
+                    commandParams[1].coords(),
+                    commandParams[2].asLong()
+                )
+                CommandType.SPLIT -> ShipCommand.Split(
+                    shipId, ShipState.fromSymbol(commandParams[1])
+                )
+            }
         }
     }
 }
+
+data class Coordinates(val x: Long, val y: Long)
+data class GameShip(
+    val id: Long,
+    val role: GameRole,
+    val position: Coordinates,
+    val velocity: Coordinates,
+    val state: ShipState,
+    val unknown1: Symbol,
+    val unknown2: Symbol,
+    val unknown3: Symbol,
+    val commands: List<ShipCommand>
+) {
+    val isDead: Boolean
+        get() = state.isDead
+}
+
+enum class CommandType {
+    ACCELERATE, DETONATE, SHOOT, SPLIT
+}
+
+sealed class ShipCommand(val type: CommandType) {
+    abstract fun asSymbol(): Symbol
+
+    data class Accelerate(val shipId: Long, val velocity: Coordinates) : ShipCommand(CommandType.ACCELERATE) {
+        override fun asSymbol(): Symbol = consListOf(Num(0), Num(shipId), consListOf(Num(velocity.x), Num(velocity.y)))
+    }
+
+    data class Detonate(val shipId: Long) : ShipCommand(CommandType.DETONATE) {
+        override fun asSymbol(): Symbol = consListOf(Num(1), Num(shipId))
+    }
+
+    data class Shoot(val shipId: Long, val coordinates: Coordinates, val power: Long) : ShipCommand(CommandType.SHOOT) {
+        override fun asSymbol(): Symbol =
+            consListOf(Num(2), Num(shipId), consListOf(Num(coordinates.x), Num(coordinates.y)), Num(power))
+    }
+
+    data class Split(val shipId: Long, val stats: ShipState) : ShipCommand(CommandType.SPLIT) {
+        override fun asSymbol(): Symbol = consListOf(Num(3), Num(shipId), stats.asSymbol())
+    }
+}
+
+private fun Symbol.coords() = asLongList().let {
+    val (x, y) = it
+    Coordinates(x, y)
+}
+
+private fun Symbol.asList(): List<Symbol> = when (this) {
+    is Nil -> emptyList()
+    is Cons -> this.iterator().asSequence().toList()
+    else -> TODO()
+}
+
+private fun Symbol.asLongList() = asList().filterIsInstance<Num>().map { it.asLong() }
+
+private fun Symbol.asLong() = (this as Num).number
+
 
 class Game {
     private val client = OkHttpClient()
@@ -84,20 +228,20 @@ class Game {
         return GameResponse.valueOf(parsed)
     }
 
-    open fun join() = Join(emptyList())
-    open fun start(state: GameResponse): Start {
-        var max = 16L
-        val first = if (max == 0L) 0 else Random.nextLong(0, max)
+    open fun join() = JoinRequest(emptyList())
+    open fun start(state: GameResponse): StartRequest {
+        var max = 16
+        val first = if (max == 0) 0 else Random.nextInt(0, max)
         max -= first
-        val second = if (max == 0L) 0 else Random.nextLong(0, max)
+        val second = if (max == 0) 0 else Random.nextInt(0, max)
         max -= second
-        val third = if (max == 0L) 0 else Random.nextLong(0, max)
+        val third = if (max == 0) 0 else Random.nextInt(0, max)
         max -= third
-        val fourth = if (max == 0L) 0 else Random.nextLong(0, max)
-        return Start(first, second, third, fourth)
+        val fourth = if (max == 0) 0 else Random.nextInt(0, max)
+        return StartRequest(ShipState(first, second, third, fourth))
     }
 
-    open fun command(state: GameResponse) = ShipCommand(emptyList())
+    open fun command(state: GameResponse) = ShipCommandRequest(emptyList())
 
     fun loop() {
         val join = join()
@@ -117,3 +261,5 @@ class Game {
     }
 
 }
+
+

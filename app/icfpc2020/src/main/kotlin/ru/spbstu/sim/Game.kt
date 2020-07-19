@@ -165,7 +165,9 @@ data class Coordinates(val x: Long, val y: Long) {
     operator fun plus(other: Coordinates) = Coordinates(x + other.x, y + other.y)
     operator fun minus(other: Coordinates) = Coordinates(x - other.x, y - other.y)
     operator fun unaryMinus() = Coordinates(-x, -y)
+    operator fun times(other: Coordinates) = Coordinates(x * other.x, y * other.y)
     fun asSymbol(): Symbol = Cons(Num(x), Num(y))
+    fun isZero() = x == 0L && y == 0L
     fun swap(): Coordinates = Coordinates(y, x)
 }
 

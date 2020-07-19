@@ -2,6 +2,8 @@ package ru.spbstu
 
 import ru.spbstu.sim.GSMS
 import ru.spbstu.sim.Game
+import ru.spbstu.sim.ShipState
+import ru.spbstu.sim.bot.CompositeBot
 import ru.spbstu.sim.bot.OrbitBot
 
 fun main(args: Array<String>) {
@@ -9,7 +11,10 @@ fun main(args: Array<String>) {
     GSMS.serverUrl = serverUrl
     GSMS.playerKey = playerKey
 
-    val bot = OrbitBot()
+    val bot = CompositeBot(
+            ShipState(300, 0, 10, 1),
+            OrbitBot()
+    )
     val game = Game(bot)
     game.loop()
 }

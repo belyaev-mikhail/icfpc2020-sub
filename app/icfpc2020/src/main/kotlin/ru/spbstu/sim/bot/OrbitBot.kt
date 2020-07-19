@@ -4,7 +4,7 @@ import ru.spbstu.sim.MapState
 import ru.spbstu.sim.ShipCommand
 import ru.spbstu.sim.ShipState
 
-open class OrbitBot : AbstractBot() {
+class OrbitBot : AbstractBot() {
     override fun initialShipState(mapState: MapState) = ShipState(300, 0, 8, 1)
 
     init {

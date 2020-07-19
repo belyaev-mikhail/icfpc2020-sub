@@ -12,7 +12,7 @@ fun main(args: Array<String>) {
 
     val bot = CompositeBot(
         ShipState(300, 20, 10, 1),
-        OrbitBot(),
+        StandingBot(),
         ShootingBot()
     )
     val game = Game(bot)

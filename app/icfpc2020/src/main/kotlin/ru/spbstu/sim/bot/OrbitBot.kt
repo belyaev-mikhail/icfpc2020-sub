@@ -19,20 +19,23 @@ class OrbitBot : AbstractBot() {
             val planetRadius = mapState.planeRadius
             var acceleration = Coordinates(0, 0)
             val truncVelocity = nextVelocity * gravity
-            val isCompensateX = abs(nextPosition.y) < planetRadius && truncVelocity.x > 0
-            val isCompensateY = abs(nextPosition.x) < planetRadius && truncVelocity.y > 0
+            val isAlongPlanetY = abs(nextPosition.y) < planetRadius
+            val isAlongPlanetX = abs(nextPosition.x) < planetRadius
+            val isAlongPlanet = isAlongPlanetX || isAlongPlanetY
+            val isCompensateX = isAlongPlanetY && truncVelocity.x > 0
+            val isCompensateY = isAlongPlanetX && truncVelocity.y > 0
             val isCompensateXY = abs(nextPosition.x) == abs(nextPosition.y) && (truncVelocity.x > 0 && truncVelocity.y > 0)
             when {
                 isCompensateX -> acceleration += Coordinates(gravity.x, 0)
                 isCompensateXY -> acceleration += Coordinates(gravity.x, 0)
-                !isCompensateY && abs(velocity.x) == 0L && gravity.x != 0L -> acceleration += Coordinates(gravity.x, 0)
+                !isAlongPlanet && abs(velocity.x) == 0L && gravity.x != 0L -> acceleration += Coordinates(gravity.x, 0)
                 abs(velocity.x) == 0L -> if (gravity.x == 0L) acceleration += Coordinates(position.x / abs(position.x), 0)
                 isCompensateY && abs(velocity.x) < planetRadius / 4 -> acceleration += Coordinates(-velocity.x / abs(velocity.x), 0)
                 isCompensateY && abs(velocity.x) > planetRadius / 2 -> acceleration += Coordinates(velocity.x / abs(velocity.x), 0)
             }
             when {
                 isCompensateY -> acceleration += Coordinates(0, gravity.y)
-                !isCompensateX && abs(velocity.y) == 0L && gravity.y != 0L -> acceleration += Coordinates(0, gravity.y)
+                !isAlongPlanet && abs(velocity.y) == 0L && gravity.y != 0L -> acceleration += Coordinates(0, gravity.y)
                 abs(velocity.y) == 0L -> if (gravity.y == 0L) acceleration += Coordinates(0, position.y / abs(position.y))
                 isCompensateX && abs(velocity.y) < planetRadius / 4 -> acceleration += Coordinates(0, -velocity.y / abs(velocity.y))
                 isCompensateX && abs(velocity.y) > planetRadius / 2 -> acceleration += Coordinates(0, velocity.y / abs(velocity.y))
@@ -47,6 +50,8 @@ class OrbitBot : AbstractBot() {
                     "truncVelocity=$truncVelocity\n" +
                     "acceleration=$acceleration " +
                     "gravity=$gravity\n" +
+                    "isAlongPlanetX=$isAlongPlanetX " +
+                    "isAlongPlanetY=$isAlongPlanetY " +
                     "isCompensateX=$isCompensateX " +
                     "isCompensateY=$isCompensateY " +
                     "isCompensateXY=$isCompensateXY")

@@ -61,12 +61,13 @@ data class MapState(
     val tickLimit: Long,
     val role: GameRole,
     val mapParams1: List<Long>,
-    val mapParams2: List<Long>,
-    val mapParams3: List<Long>
+    val planeRadius: Long,
+    val spaceRadius: Long,
+    val attackerStats: ShipState?
 )
 
 data class GameState(
-    val x: Long,
+    val tick: Long,
     val unknownParam: List<Long>,
     val ships: List<GameShip>
 )
@@ -93,6 +94,10 @@ data class GameResponse(
             }
             val (_, stageIndexSym, mapStateSym, gameStateSym) = gameResponse
             val stage = GameStage.values()[stageIndexSym.asLong().toInt()]
+            if (stage == GameStage.FINISHED) {
+                System.err.println("Game finished")
+                return null
+            }
             val mapState = parseMapState(mapStateSym)
             val gameState = parseGameState(gameStateSym)
             return GameResponse(status, stage, mapState, gameState)
@@ -105,7 +110,11 @@ data class GameResponse(
             val mapParams2 = mapParams2Sym.asLongList()
             val mapParams3 = mapParams3Sym.asLongList()
             val role = GameRole.values()[roleSym.asLong().toInt()]
-            return MapState(tickLimitSym.asLong(), role, mapParams1, mapParams2, mapParams3)
+            val attackerStats = when {
+                mapParams3.isEmpty() -> null
+                else -> ShipState.fromSymbol(mapParams3Sym)
+            }
+            return MapState(tickLimitSym.asLong(), role, mapParams1, mapParams2[0], mapParams2[1], attackerStats)
         }
 
         private fun parseGameState(symbol: Symbol): GameState? {
@@ -153,9 +162,11 @@ data class GameResponse(
 }
 
 data class Coordinates(val x: Long, val y: Long) {
-    operator fun plus(other: Coordinates) =
-        Coordinates(this.x + other.x, this.y + other.y)
+    operator fun plus(other: Coordinates) = Coordinates(x + other.x, y + other.y)
+    operator fun minus(other: Coordinates) = Coordinates(x - other.x, y - other.y)
+    fun asSymbol(): Symbol = Cons(Num(x), Num(y))
 }
+
 data class GameShip(
     val id: Long,
     val role: GameRole,
@@ -179,7 +190,7 @@ sealed class ShipCommand(val type: CommandType) {
     abstract fun asSymbol(): Symbol
 
     data class Accelerate(val shipId: Long, val velocity: Coordinates) : ShipCommand(CommandType.ACCELERATE) {
-        override fun asSymbol(): Symbol = consListOf(Num(0), Num(shipId), consListOf(Num(velocity.x), Num(velocity.y)))
+        override fun asSymbol(): Symbol = consListOf(Num(0), Num(shipId), velocity.asSymbol())
     }
 
     data class Detonate(val shipId: Long) : ShipCommand(CommandType.DETONATE) {
@@ -188,7 +199,7 @@ sealed class ShipCommand(val type: CommandType) {
 
     data class Shoot(val shipId: Long, val coordinates: Coordinates, val power: Long) : ShipCommand(CommandType.SHOOT) {
         override fun asSymbol(): Symbol =
-            consListOf(Num(2), Num(shipId), consListOf(Num(coordinates.x), Num(coordinates.y)), Num(power))
+            consListOf(Num(2), Num(shipId), coordinates.asSymbol(), Num(power))
     }
 
     data class Split(val shipId: Long, val stats: ShipState) : ShipCommand(CommandType.SPLIT) {
@@ -231,9 +242,16 @@ class Game(val bot: Bot) {
         return GameResponse.valueOf(parsed)
     }
 
-    open fun join() = JoinRequest(emptyList())
-    open fun start(state: GameResponse): StartRequest = StartRequest(bot.initialShipState(state.gameState, state.mapState))
-    open fun command(state: GameResponse) = ShipCommandRequest(bot.step(state.gameState, state.mapState))
+    private fun join() = JoinRequest(emptyList())
+
+    private fun start(state: GameResponse): StartRequest {
+        bot.prepare(state.mapState)
+        return StartRequest(bot.initialShipState(state.mapState))
+    }
+
+    private fun command(state: GameResponse): ShipCommandRequest {
+        return ShipCommandRequest(bot.step(state.gameState, state.mapState))
+    }
 
     fun loop() {
         val join = join()
@@ -253,5 +271,3 @@ class Game(val bot: Bot) {
     }
 
 }
-
-

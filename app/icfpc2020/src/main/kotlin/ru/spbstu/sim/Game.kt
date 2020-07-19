@@ -26,6 +26,8 @@ data class ShipState(val fuel: Int, val power: Int, val coolPerTick: Int, val nu
             return ShipState(a, b, c, d)
         }
     }
+
+    fun sum() = fuel + power + coolPerTick + numberOfCopies
 }
 
 data class JoinRequest(val arguments: List<Symbol>) : GameRequest {

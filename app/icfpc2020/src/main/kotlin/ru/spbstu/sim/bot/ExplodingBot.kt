@@ -32,18 +32,27 @@ class ExplodingBot : AbstractBot() {
         }
     }
 
-    init {
-        step { gameShip, gameState, mapState, list ->
-            val enemyShips = gameState.ships.filter { it.role != mapState.role }
-            if (enemyShips.size != 1) return@step listOf()
+    private val GameShip.isShrapnel: Boolean get() = this.state.sum() <= 3
+    private fun GameShip.canReach(other: GameShip) = other.position.manhattanDist(this.position) <= this.explosionRadius
 
-            val enemy = enemyShips.first()
-            val explosionRadius = gameShip.explosionRadius
+    init {
+        step { gameShip, gameState, mapState, _ ->
+            val enemyShips = gameState.ships.filter { it.role != mapState.role }
             when {
-                enemy.position.manhattanDist(gameShip.position) <= explosionRadius -> {
-                    listOf(ShipCommand.Detonate(gameShip.id))
+                gameShip.isShrapnel -> {
+                    when {
+                        enemyShips.any { gameShip.canReach(it) } -> listOf(ShipCommand.Detonate(gameShip.id))
+                        else -> listOf()
+                    }
                 }
-                else -> listOf()
+                else -> {
+                    if (enemyShips.size != 1) return@step listOf()
+                    val enemy = enemyShips.first()
+                    when {
+                        gameShip.canReach(enemy) -> listOf(ShipCommand.Detonate(gameShip.id))
+                        else -> listOf()
+                    }
+                }
             }
         }
     }

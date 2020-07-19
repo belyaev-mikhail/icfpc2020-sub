@@ -25,7 +25,7 @@ class ShootingBot(val initialShipState: ShipState, val eps: Double) : AbstractBo
         get() {
             var approximatePosition = position
             approximatePosition += velocity
-            approximatePosition += gravity(position)
+            approximatePosition += -gravity(position)
             for (moveCommand in this.commands.filterIsInstance<ShipCommand.Accelerate>()) {
                 approximatePosition += moveCommand.velocity
             }

@@ -37,7 +37,7 @@ class OrbitBot : AbstractBot() {
 
             when {
                 acceleration.isZero() -> emptyList()
-                else -> listOf(ShipCommand.Accelerate(ship.id, acceleration))
+                else -> listOf(ShipCommand.Accelerate(ship.id, -acceleration))
             }
         }
     }

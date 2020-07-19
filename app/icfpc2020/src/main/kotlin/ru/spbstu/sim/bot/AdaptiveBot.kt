@@ -24,7 +24,7 @@ fun computeDefenderStats(maxStats: Int): ShipState {
 
 fun computeAttackerStats(maxStats: Int): ShipState {
     var availableStats = maxStats - 1
-    val copies = 4
+    val copies = 1
     availableStats -= 2.0.pow(copies).toInt() - 1
 
     var fuel = min(256, availableStats)

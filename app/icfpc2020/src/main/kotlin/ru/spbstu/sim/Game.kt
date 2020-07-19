@@ -246,7 +246,7 @@ class Game(val bot: Bot) {
         return GameResponse.valueOf(parsed)
     }
 
-    private fun join() = JoinRequest(emptyList())
+    private fun join() = JoinRequest(listOf(Num(103652820)))
 
     private fun start(state: GameResponse): StartRequest {
         bot.prepare(state.mapState)

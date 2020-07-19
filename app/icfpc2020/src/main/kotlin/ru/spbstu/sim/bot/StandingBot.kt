@@ -11,7 +11,8 @@ class StandingBot : AbstractBot() {
     init {
         step { ship, _, _ ->
             val velocity = gravity(ship.position)
-            listOf(ShipCommand.Accelerate(ship.id, velocity))
+            val reversedGravity = gravity(ship.position.swap())
+            listOf(ShipCommand.Accelerate(ship.id, velocity + reversedGravity))
         }
     }
 }

@@ -21,10 +21,13 @@ class ShootingBot(val initialShipState: ShipState) : AbstractBot() {
 
     private val GameShip.nextApproximatePosition: Coordinates
         get() {
-            val current = position
-            val velocity = velocity
-            val gravityApprox = gravity(current)
-            return current + velocity + gravityApprox
+            var approximatePosition = position
+            approximatePosition += velocity
+            approximatePosition += gravity(position)
+            for (moveCommand in this.commands.filterIsInstance<ShipCommand.Accelerate>()) {
+                approximatePosition += moveCommand.velocity
+            }
+            return approximatePosition
         }
 
     override fun initialShipState(mapState: MapState) = initialShipState

@@ -65,6 +65,10 @@ class ShootingBot(val initialShipState: ShipState, val eps: Double) : AbstractBo
             val enemyShip = gameState.ships.filter { it.role != role }.firstOrNull { enemy ->
                 val enemyCoordinates = enemy.nextApproximatePosition
 
+                if (enemyCoordinates.manhattanDist(allyCoordinates) > mapState.maxShootingDistance) {
+                    return@firstOrNull false
+                }
+
                 val angle = allyCoordinates.angle(enemyCoordinates)
                 isValidAngle(angle) && (enemy.state.coolPerTick < power)
             } ?: return@step listOf()

@@ -69,6 +69,7 @@ data class MapState(
     val attackerStats: ShipState?
 ) {
     val maxStats get() = mapParams1.first()
+    val maxShootingDistance get() = mapParams1[2]
 }
 
 data class GameState(

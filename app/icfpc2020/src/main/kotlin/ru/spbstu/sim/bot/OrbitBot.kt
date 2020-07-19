@@ -16,8 +16,8 @@ class OrbitBot : AbstractBot() {
             val gravity = gravity(ship.position)
             var acceleration = Coordinates(0, 0)
             val truncVelocity = ship.velocity * gravity
-            val isCompensateX = abs(position.y) < planetRadius && truncVelocity.x < ACCELERATION
-            val isCompensateY = abs(position.x) < planetRadius && truncVelocity.y < ACCELERATION
+            val isCompensateX = abs(position.y) < planetRadius && truncVelocity.y < ACCELERATION
+            val isCompensateY = abs(position.x) < planetRadius && truncVelocity.x < ACCELERATION
             val isCompensateXY = abs(position.x) == abs(position.y) &&
                     (truncVelocity.x < ACCELERATION && truncVelocity.y < ACCELERATION)
             when {

@@ -1,13 +1,12 @@
 package ru.spbstu.sim.bot
 
 import ru.spbstu.sim.*
-import java.lang.Integer.max
 import java.lang.Integer.min
 
 fun computeDefenderStats(maxStats: Int): ShipState {
     var availableStats = maxStats
     val copies = 1
-    var fuel = max(256, availableStats)
+    var fuel = min(256, availableStats)
     availableStats -= fuel
 
     val cooling = availableStats / 12
@@ -24,7 +23,7 @@ fun computeDefenderStats(maxStats: Int): ShipState {
 fun computeAttackerStats(maxStats: Int): ShipState {
     var availableStats = maxStats
     val copies = 1
-    var fuel = max(256, availableStats)
+    var fuel = min(256, availableStats)
     availableStats -= fuel
 
     val cooling = min(8, availableStats / 12)

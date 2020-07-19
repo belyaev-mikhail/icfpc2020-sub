@@ -28,6 +28,7 @@ class OrbitBot : AbstractBot() {
                 abs(nextVelocity.y) < mapState.planeRadius / 2 -> acceleration += Coordinates(0, gravity.y)
                 abs(nextVelocity.y) > mapState.planeRadius -> acceleration += Coordinates(0, -gravity.y)
             }
+            println("$isCompensateX $isCompensateY $isAbovePlanet ${ship.velocity} ${gravity}")
 
             when {
                 acceleration.isZero() -> emptyList()

@@ -46,13 +46,13 @@ class ShootingBot(val initialShipState: ShipState, val eps: Double) : AbstractBo
                 ally.state.power.toLong(),
                 ((ally.maxHeatingLevel - (Num(currentTurnHeatLevel.toLong()) + ally.heatLevel - Num(ally.state.coolPerTick.toLong()))) as Num).number
             )
-            if (power == 0L) return@step listOf()
+            if (power <= 0L) return@step listOf()
 
 
             val allyCoordinates = ally.nextApproximatePosition
 
             val role = mapState.role
-            val enemyShip = gameState.ships.filter { it.role != role }.firstOrNull() { enemy ->
+            val enemyShip = gameState.ships.filter { it.role != role }.firstOrNull { enemy ->
                 val enemyCoordinates = enemy.nextApproximatePosition
 
                 val angle = allyCoordinates.angle(enemyCoordinates)

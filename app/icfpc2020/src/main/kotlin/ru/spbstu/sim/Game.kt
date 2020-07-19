@@ -143,7 +143,7 @@ data class GameResponse(
             val state = ShipState.fromSymbol(stateSym)
             return GameShip(
                 shipId, role, positionSym.coords(), velocitySym.coords(),
-                state, unknown1, unknown2, unknown3, commands
+                state, unknown1.asLong(), unknown2.asLong(), unknown3.asLong(), commands
             )
         }
 
@@ -186,9 +186,9 @@ data class GameShip(
     val position: Coordinates,
     val velocity: Coordinates,
     val state: ShipState,
-    val heatLevel: Symbol,
-    val maxHeatingLevel: Symbol,
-    val accelerationBonus: Symbol,
+    val heatLevel: Long,
+    val maxHeatingLevel: Long,
+    val accelerationBonus: Long,
     val commands: List<ShipCommand>
 ) {
     val isDead: Boolean

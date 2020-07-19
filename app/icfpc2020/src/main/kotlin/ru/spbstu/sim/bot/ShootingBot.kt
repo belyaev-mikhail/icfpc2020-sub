@@ -54,9 +54,10 @@ class ShootingBot(val initialShipState: ShipState, val eps: Double) : AbstractBo
             }.sum()
             val power = min(
                 ally.state.power.toLong(),
-                ((ally.maxHeatingLevel - (Num(currentTurnHeatLevel.toLong()) + ally.heatLevel - Num(ally.state.coolPerTick.toLong()))) as Num).number
+                ally.maxHeatingLevel - (currentTurnHeatLevel.toLong() + ally.heatLevel - ally.state.coolPerTick.toLong())
             )
             if (power <= 0L) return@step listOf()
+            if (ally.heatLevel + power >= ally.maxHeatingLevel) return@step listOf()
 
 
             val allyCoordinates = ally.computeNewPos(previousCommands)

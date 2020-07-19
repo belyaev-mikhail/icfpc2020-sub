@@ -25,12 +25,14 @@ class OrbitBot : AbstractBot() {
             when {
                 isCompensateX -> acceleration += Coordinates(gravity.x, 0)
                 isCompensateXY -> acceleration += Coordinates(gravity.x, 0)
+                !isCompensateY && abs(velocity.x) == 0L && gravity.x != 0L -> acceleration += Coordinates(gravity.x, 0)
                 abs(velocity.x) == 0L -> if (gravity.x == 0L) acceleration += Coordinates(position.x / abs(position.x), 0)
                 isCompensateY && abs(velocity.x) < planetRadius / 4 -> acceleration += Coordinates(-velocity.x / abs(velocity.x), 0)
                 isCompensateY && abs(velocity.x) > planetRadius / 2 -> acceleration += Coordinates(velocity.x / abs(velocity.x), 0)
             }
             when {
                 isCompensateY -> acceleration += Coordinates(0, gravity.y)
+                !isCompensateX && abs(velocity.y) == 0L && gravity.y != 0L -> acceleration += Coordinates(0, gravity.y)
                 abs(velocity.y) == 0L -> if (gravity.y == 0L) acceleration += Coordinates(0, position.y / abs(position.y))
                 isCompensateX && abs(velocity.y) < planetRadius / 4 -> acceleration += Coordinates(0, -velocity.y / abs(velocity.y))
                 isCompensateX && abs(velocity.y) > planetRadius / 2 -> acceleration += Coordinates(0, velocity.y / abs(velocity.y))

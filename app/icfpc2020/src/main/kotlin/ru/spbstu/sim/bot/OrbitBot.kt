@@ -32,6 +32,7 @@ class OrbitBot : AbstractBot() {
 
             println("---------------------------")
             println("tick=${gameState.tick} " +
+                    "position=$position" +
                     "velocity=${ship.velocity} " +
                     "truncVelocity=$truncVelocity " +
                     "gravity=$gravity" +

@@ -9,10 +9,13 @@ import ru.spbstu.sim.ShipState
 class StandingBot : AbstractBot() {
     override fun initialShipState(mapState: MapState) = ShipState(300, 0, 8, 1)
 
+    private var stepModifier = -1
+
     val Coordinates.randomVector: Coordinates get() {
         val reversed = this.swap()
-        val random = listOf(-1, 1).random()
-        return Coordinates(reversed.x * random, reversed.y * random)
+        val newCoords = Coordinates(reversed.x * stepModifier, reversed.y * stepModifier)
+        stepModifier *= -1
+        return newCoords
     }
 
     init {

@@ -14,12 +14,12 @@ fun main(args: Array<String>) {
     val bot = AdaptiveBot(
         CompositeBot(
             ShipState(256, 0, 0, 1),
-            StandingBot(),
+            JumpingBot(),
             ShootingBot(0.0)
         ),
         CompositeBot(
             ShipState(256, 0, 15, 1),
-            StandingBot()
+            JumpingBot()
         )
     )
     val game = Game(bot)

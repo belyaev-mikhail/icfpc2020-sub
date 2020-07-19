@@ -172,6 +172,7 @@ data class Coordinates(val x: Long, val y: Long) {
     operator fun minus(other: Coordinates) = Coordinates(x - other.x, y - other.y)
     operator fun unaryMinus() = Coordinates(-x, -y)
     operator fun times(other: Coordinates) = Coordinates(x * other.x, y * other.y)
+    operator fun times(num: Int) = Coordinates(x * num, y * num)
     fun asSymbol(): Symbol = Cons(Num(x), Num(y))
     fun isZero() = x == 0L && y == 0L
     fun swap(): Coordinates = Coordinates(y, x)

@@ -15,8 +15,6 @@ fun main(args: Array<String>) {
 
     val bot = CompositeBot(
         ShipState(200, 20, 10, 3),
-        OrbitBot(),
-        SplitterBot(),
         ShootingBot()
     )
     val game = Game(bot)

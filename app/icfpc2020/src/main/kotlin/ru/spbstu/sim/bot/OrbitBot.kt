@@ -23,16 +23,17 @@ class OrbitBot : AbstractBot() {
             val isCompensateY = abs(nextPosition.x) < planetRadius && truncVelocity.y > 0
             val isCompensateXY = abs(nextPosition.x) == abs(nextPosition.y) && (truncVelocity.x > 0 && truncVelocity.y > 0)
             when {
-                isCompensateX || isCompensateXY -> acceleration += Coordinates(gravity.x, 0)
-                abs(velocity.x) == 0L -> acceleration += Coordinates(1, 0)
-                isCompensateY && abs(velocity.x) < planetRadius / 2 -> acceleration += Coordinates(-velocity.x / abs(velocity.x), 0)
-//                abs(velocity.x) > planetRadius -> acceleration += Coordinates(velocity.x / abs(velocity.x), 0)
+                isCompensateX -> acceleration += Coordinates(gravity.x, 0)
+                isCompensateXY -> acceleration += Coordinates(gravity.x, 0)
+                abs(velocity.x) == 0L -> if (gravity.x == 0L) acceleration += Coordinates(position.x / abs(position.x), 0)
+                isCompensateY && abs(velocity.x) < planetRadius / 4 -> acceleration += Coordinates(-velocity.x / abs(velocity.x), 0)
+                isCompensateY && abs(velocity.x) > planetRadius / 2 -> acceleration += Coordinates(-velocity.x / abs(velocity.x), 0)
             }
             when {
                 isCompensateY -> acceleration += Coordinates(0, gravity.y)
-                abs(velocity.y) == 0L -> acceleration += Coordinates(0, 1)
-                isCompensateX && abs(velocity.y) < planetRadius / 2 -> acceleration += Coordinates(0, -velocity.y / abs(velocity.y))
-//                abs(velocity.y) > planetRadius -> acceleration += Coordinates(0, velocity.y / abs(velocity.y))
+                abs(velocity.y) == 0L -> if (gravity.y == 0L) acceleration += Coordinates(0, position.y / abs(position.y))
+                isCompensateX && abs(velocity.y) < planetRadius / 4 -> acceleration += Coordinates(0, -velocity.y / abs(velocity.y))
+                isCompensateX && abs(velocity.y) > planetRadius / 2 -> acceleration += Coordinates(0, -velocity.y / abs(velocity.y))
             }
 
             println("---------------------------")

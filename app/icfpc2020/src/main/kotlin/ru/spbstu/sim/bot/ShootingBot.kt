@@ -51,7 +51,7 @@ class ShootingBot(val initialShipState: ShipState) : AbstractBot() {
                 val enemyCoordinates = enemy.nextApproximatePosition
 
                 val angle = allyCoordinates.angle(enemyCoordinates)
-                isValidAngle(angle)
+                isValidAngle(angle) && (enemy.state.coolPerTick < power)
             } ?: return@step listOf()
 
             listOf(ShipCommand.Shoot(ally.id, enemyShip.nextApproximatePosition, power))

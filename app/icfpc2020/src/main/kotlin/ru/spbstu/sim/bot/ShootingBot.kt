@@ -14,9 +14,10 @@ class ShootingBot(val initialShipState: ShipState) : AbstractBot() {
 
     private fun isValidAngle(angle: Double): Boolean {
         val eps = PI / 16
+        val normalizedAngle = abs(angle % (PI / 2))
         return when {
-            abs(angle - PI / 2) <= eps -> true
-            abs(angle - PI / 4) <= eps -> true
+            abs(normalizedAngle - PI / 2) <= eps -> true
+            abs(normalizedAngle - PI / 4) <= eps -> true
             else -> false
         }
     }

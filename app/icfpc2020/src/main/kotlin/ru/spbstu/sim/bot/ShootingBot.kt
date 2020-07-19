@@ -6,14 +6,13 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
 
-class ShootingBot(val initialShipState: ShipState) : AbstractBot() {
-    constructor() : this(ShipState(0, 0, 0, 1))
+class ShootingBot(val initialShipState: ShipState, val eps: Double) : AbstractBot() {
+    constructor(eps: Double) : this(ShipState(0, 0, 0, 1), eps)
 
     private fun Coordinates.angle(other: Coordinates) =
         atan2((this.y - other.y).toDouble(), (this.x - other.x).toDouble())
 
     private fun isValidAngle(angle: Double): Boolean {
-        val eps = PI / 16
         val normalizedAngle = abs(angle % (PI / 2))
         return when {
             abs(normalizedAngle - PI / 2) <= eps -> true

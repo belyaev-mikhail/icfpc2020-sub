@@ -161,7 +161,10 @@ data class GameResponse(
     }
 }
 
-data class Coordinates(val x: Long, val y: Long)
+data class Coordinates(val x: Long, val y: Long) {
+    fun asSymbol(): Symbol = Cons(Num(x), Num(y))
+}
+
 data class GameShip(
     val id: Long,
     val role: GameRole,
@@ -185,7 +188,7 @@ sealed class ShipCommand(val type: CommandType) {
     abstract fun asSymbol(): Symbol
 
     data class Accelerate(val shipId: Long, val velocity: Coordinates) : ShipCommand(CommandType.ACCELERATE) {
-        override fun asSymbol(): Symbol = consListOf(Num(0), Num(shipId), consListOf(Num(velocity.x), Num(velocity.y)))
+        override fun asSymbol(): Symbol = consListOf(Num(0), Num(shipId), velocity.asSymbol())
     }
 
     data class Detonate(val shipId: Long) : ShipCommand(CommandType.DETONATE) {
@@ -194,7 +197,7 @@ sealed class ShipCommand(val type: CommandType) {
 
     data class Shoot(val shipId: Long, val coordinates: Coordinates, val power: Long) : ShipCommand(CommandType.SHOOT) {
         override fun asSymbol(): Symbol =
-            consListOf(Num(2), Num(shipId), consListOf(Num(coordinates.x), Num(coordinates.y)), Num(power))
+            consListOf(Num(2), Num(shipId), coordinates.asSymbol(), Num(power))
     }
 
     data class Split(val shipId: Long, val stats: ShipState) : ShipCommand(CommandType.SPLIT) {
@@ -266,5 +269,3 @@ class Game(val bot: Bot) {
     }
 
 }
-
-

@@ -20,7 +20,7 @@ class OrbitBot : AbstractBot() {
             when {
                 isCompensateX -> acceleration += Coordinates(-gravity.x, 0)
                 abs(truncVelocity.x) < 2 * ACCELERATION -> acceleration += Coordinates(gravity.x, 0)
-                abs(truncVelocity.x) < 2 * ACCELERATION -> acceleration += Coordinates(-gravity.x, 0)
+                abs(truncVelocity.x) > 5 * ACCELERATION -> acceleration += Coordinates(-gravity.x, 0)
             }
             when {
                 isCompensateY -> acceleration += Coordinates(0, -gravity.y)

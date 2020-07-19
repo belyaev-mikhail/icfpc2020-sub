@@ -11,14 +11,16 @@ class OrbitBot : AbstractBot() {
 
     init {
         step { ship, gameState, mapState ->
+            val velocity = ship.velocity
             val position = ship.position
+            val nextPosition = ship.position + velocity
             val planetRadius = mapState.planeRadius
             val gravity = gravity(ship.position)
             var acceleration = Coordinates(0, 0)
             val truncVelocity = ship.velocity * gravity
-            val isCompensateX = abs(position.y) < planetRadius && truncVelocity.x > 0
-            val isCompensateY = abs(position.x) < planetRadius && truncVelocity.y > 0
-            val isCompensateXY = abs(position.x) == abs(position.y) && (truncVelocity.x > 0 && truncVelocity.y > 0)
+            val isCompensateX = abs(nextPosition.y) < planetRadius && truncVelocity.x > 0
+            val isCompensateY = abs(nextPosition.x) < planetRadius && truncVelocity.y > 0
+            val isCompensateXY = abs(nextPosition.x) == abs(nextPosition.y) && (truncVelocity.x > 0 && truncVelocity.y > 0)
             when {
                 isCompensateX || isCompensateXY -> acceleration += Coordinates(gravity.x, 0)
                 abs(truncVelocity.x) < 2 * ACCELERATION -> acceleration += Coordinates(gravity.x, 0)
@@ -32,8 +34,9 @@ class OrbitBot : AbstractBot() {
 
             println("---------------------------")
             println("tick=${gameState.tick} " +
-                    "position=$position" +
-                    "velocity=${ship.velocity} " +
+                    "position=$position " +
+                    "nextPosition=$nextPosition " +
+                    "velocity=$velocity " +
                     "truncVelocity=$truncVelocity " +
                     "gravity=$gravity" +
                     "isCompensateX=$isCompensateX " +

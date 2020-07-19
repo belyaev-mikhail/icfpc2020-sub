@@ -541,7 +541,7 @@ fun main() {
     GSMS.playerKey = "5b38d34226a14d73878985ecdc25f79a"
     GSMS.serverUrl = "https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=${GSMS.playerKey}"
 
-    val aa = parse(File("D:\\Workspace\\icfpc2020-sub\\app\\icfpc2020\\data\\galaxy.txt").readText())
+    val aa = parse(File("data/galaxy.txt").readText())
 //    val initialState = State(-3L, -3L, nil)
     val initialState = State(-3L, -3L, decode("1101100001111101111110000000000000000010110011010110000"))
 //    val initialState = State(1L, 4L, decode("11011001011111011000101101011001100110011001100110111111111111111111000000000000000000000000000000000000000000000000000001100011111110101001101101001110000"))

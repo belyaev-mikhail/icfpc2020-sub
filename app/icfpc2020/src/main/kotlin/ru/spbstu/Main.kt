@@ -5,6 +5,7 @@ import ru.spbstu.sim.Game
 import ru.spbstu.sim.ShipState
 import ru.spbstu.sim.bot.CompositeBot
 import ru.spbstu.sim.bot.OrbitBot
+import ru.spbstu.sim.bot.ShootingBot
 import ru.spbstu.sim.bot.SplitterBot
 
 fun main(args: Array<String>) {
@@ -13,9 +14,9 @@ fun main(args: Array<String>) {
     GSMS.playerKey = playerKey
 
     val bot = CompositeBot(
-        ShipState(200, 20, 10, 3),
+        ShipState(300, 20, 10, 3),
         OrbitBot(),
-        SplitterBot()
+        ShootingBot()
     )
     val game = Game(bot)
     game.loop()

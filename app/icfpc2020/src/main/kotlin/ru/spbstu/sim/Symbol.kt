@@ -345,7 +345,7 @@ val isnil by Fun { lst ->
     when (val lst = strict(lst)) {
         is Nil -> t
         is Cons -> f
-        else -> throw IllegalStateException("$lst")
+        else -> throw IllegalStateException()
     }
 }
 
@@ -543,8 +543,8 @@ fun main() {
 
     val aa = parse(File("data/galaxy.txt").readText())
 //    val initialState = State(-3L, -3L, nil)
-    val initialState = State(-3L, -3L, decode("1101100001111101111110000000000000000010110011010110000"))
-//    val initialState = State(1L, 4L, decode("11011001011111011000101101011001100110011001100110111111111111111111000000000000000000000000000000000000000000000000000001100011111110101001101101001110000"))
+//    val initialState = State(-3L, -3L, decode("1101100001111101111110000000000000000010110011010110000"))
+    val initialState = State(1L, 4L, decode("11011001011111011000101101011001100110011001100110111111111111111111000000000000000000000000000000000000000000000000000001100011111110101001101101001110000"))
 //    val initialState = State(
 //        46L,
 //        1L,

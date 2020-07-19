@@ -9,7 +9,7 @@ class OrbitBot : AbstractBot() {
 
     init {
         step { ship, gameState, mapState ->
-            val velocity = gravity(ship.position)
+            val velocity = -gravity(ship.position)
             listOf(ShipCommand.Accelerate(ship.id, velocity))
         }
     }

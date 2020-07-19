@@ -13,3 +13,7 @@ fun gravity(relTo: Coordinates): Coordinates {
     if (y < 0 && abs(x) <= abs(y)) res += Coordinates(0, 1)
     return res
 }
+
+//fun abovePlant(relTo: Coordinates, planetDiameter: Long): Coordinates {
+//    val
+//}

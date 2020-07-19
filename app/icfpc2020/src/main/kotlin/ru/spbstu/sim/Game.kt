@@ -3,8 +3,11 @@ package ru.spbstu.sim
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import ru.spbstu.pow
 import ru.spbstu.protocol.Protocol
 import ru.spbstu.sim.bot.Bot
+import kotlin.math.abs
+import kotlin.math.sqrt
 
 interface GameRequest {
     fun symbol(): Symbol
@@ -171,6 +174,9 @@ data class Coordinates(val x: Long, val y: Long) {
     fun asSymbol(): Symbol = Cons(Num(x), Num(y))
     fun isZero() = x == 0L && y == 0L
     fun swap(): Coordinates = Coordinates(y, x)
+
+    fun dist(other: Coordinates) = sqrt(((this.x - other.x).pow(2) + (this.y - other.y).pow(2)).toDouble())
+    fun manhattanDist(other: Coordinates) = maxOf(abs(this.x - other.x), abs(this.y - other.y))
 }
 
 data class GameShip(

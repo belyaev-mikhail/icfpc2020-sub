@@ -11,7 +11,7 @@ fun main(args: Array<String>) {
     GSMS.playerKey = playerKey
 
     val bot = CompositeBot(
-        ShipState(256, 20, 10, 1),
+        ShipState(200, 20, 10, 1),
         StandingBot(),
         ShootingBot()
     )

@@ -64,7 +64,9 @@ data class MapState(
     val planeRadius: Long,
     val spaceRadius: Long,
     val attackerStats: ShipState?
-)
+) {
+    val maxStats get() = mapParams1.first()
+}
 
 data class GameState(
     val tick: Long,

@@ -166,6 +166,7 @@ data class Coordinates(val x: Long, val y: Long) {
     operator fun minus(other: Coordinates) = Coordinates(x - other.x, y - other.y)
     operator fun unaryMinus() = Coordinates(-x, -y)
     fun asSymbol(): Symbol = Cons(Num(x), Num(y))
+    fun swap(): Coordinates = Coordinates(y, x)
 }
 
 data class GameShip(

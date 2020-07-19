@@ -11,7 +11,7 @@ class ShootingBot(val initialShipState: ShipState) : AbstractBot() {
     private fun Coordinates.angle(other: Coordinates) = atan2((this.y - other.y).toDouble(), (this.x - other.x).toDouble())
 
     private fun isValidAngle(angle: Double): Boolean {
-        val eps = 0.001
+        val eps = PI / 16
         return when {
             abs(angle - PI / 2) <= eps -> true
             abs(angle - PI / 4) <= eps -> true

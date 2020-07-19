@@ -152,7 +152,10 @@ data class GameResponse(
     }
 }
 
-data class Coordinates(val x: Long, val y: Long)
+data class Coordinates(val x: Long, val y: Long) {
+    operator fun plus(other: Coordinates) =
+        Coordinates(this.x + other.x, this.y + other.y)
+}
 data class GameShip(
     val id: Long,
     val role: GameRole,

@@ -229,18 +229,7 @@ class Game {
     }
 
     open fun join() = JoinRequest(emptyList())
-    open fun start(state: GameResponse): StartRequest {
-        var max = 16
-        val first = if (max == 0) 0 else Random.nextInt(0, max)
-        max -= first
-        val second = if (max == 0) 0 else Random.nextInt(0, max)
-        max -= second
-        val third = if (max == 0) 0 else Random.nextInt(0, max)
-        max -= third
-        val fourth = if (max == 0) 0 else Random.nextInt(0, max)
-        return StartRequest(ShipState(first, second, third, fourth))
-    }
-
+    open fun start(state: GameResponse): StartRequest = StartRequest(ShipState(216, 0, 4, 1 ))
     open fun command(state: GameResponse) = ShipCommandRequest(emptyList())
 
     fun loop() {

@@ -4,18 +4,18 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import ru.spbstu.protocol.Protocol
-import kotlin.random.Random
+import ru.spbstu.sim.bot.Bot
 
 interface GameRequest {
     fun symbol(): Symbol
     fun modulate() = Protocol().encode(symbol())
 }
 
-data class ShipState(val fuel: Int, val power: Int, val coolPerTick: Int, val unknown: Int) {
+data class ShipState(val fuel: Int, val power: Int, val coolPerTick: Int, val numberOfCopies: Int) {
     val isDead: Boolean
-        get() = listOf(fuel, power, coolPerTick, unknown).all { it == 0 }
+        get() = listOf(fuel, power, coolPerTick, numberOfCopies).all { it == 0 }
 
-    fun asSymbol(): Symbol = consListOf(listOf(fuel, power, coolPerTick, unknown).map { Num(it.toLong()) })
+    fun asSymbol(): Symbol = consListOf(listOf(fuel, power, coolPerTick, numberOfCopies).map { Num(it.toLong()) })
 
     companion object {
         fun fromSymbol(symbol: Symbol): ShipState {
@@ -58,17 +58,18 @@ enum class GameRole {
 }
 
 data class MapState(
-    val tickLimit: Long,
-    val role: GameRole,
-    val mapParams1: List<Long>,
-    val mapParams2: List<Long>,
-    val mapParams3: List<Long>
+        val tickLimit: Long,
+        val role: GameRole,
+        val mapParams1: List<Long>,
+        val planeRadius: Long,
+        val spaceRadius: Long,
+        val attackerStats: ShipState?
 )
 
 data class GameState(
-    val x: Long,
-    val unknownParam: List<Long>,
-    val ships: List<GameShip>
+        val tick: Long,
+        val unknownParam: List<Long>,
+        val ships: List<GameShip>
 )
 
 data class GameResponse(
@@ -105,7 +106,11 @@ data class GameResponse(
             val mapParams2 = mapParams2Sym.asLongList()
             val mapParams3 = mapParams3Sym.asLongList()
             val role = GameRole.values()[roleSym.asLong().toInt()]
-            return MapState(tickLimitSym.asLong(), role, mapParams1, mapParams2, mapParams3)
+            val attackerStats = when {
+                mapParams3.isEmpty() -> null
+                else -> ShipState.fromSymbol(mapParams3Sym)
+            }
+            return MapState(tickLimitSym.asLong(), role, mapParams1, mapParams2[0], mapParams2[1], attackerStats)
         }
 
         private fun parseGameState(symbol: Symbol): GameState? {
@@ -160,8 +165,8 @@ data class GameShip(
     val velocity: Coordinates,
     val state: ShipState,
     val unknown1: Symbol,
-    val unknown2: Symbol,
-    val unknown3: Symbol,
+    val heatingBonus: Symbol,
+    val accelerationBonus: Symbol,
     val commands: List<ShipCommand>
 ) {
     val isDead: Boolean
@@ -209,7 +214,7 @@ private fun Symbol.asLongList() = asList().filterIsInstance<Num>().map { it.asLo
 private fun Symbol.asLong() = (this as Num).number
 
 
-class Game {
+class Game(val bot: Bot) {
     private val client = OkHttpClient()
     private fun send(request: GameRequest): GameResponse? {
         System.err.println("$request")
@@ -228,9 +233,16 @@ class Game {
         return GameResponse.valueOf(parsed)
     }
 
-    open fun join() = JoinRequest(emptyList())
-    open fun start(state: GameResponse): StartRequest = StartRequest(ShipState(216, 0, 4, 1 ))
-    open fun command(state: GameResponse) = ShipCommandRequest(emptyList())
+    private fun join() = JoinRequest(emptyList())
+
+    private fun start(state: GameResponse): StartRequest {
+        bot.prepare(state.gameState, state.mapState)
+        return StartRequest(bot.initialShipState(state.gameState, state.mapState))
+    }
+
+    private fun command(state: GameResponse): ShipCommandRequest {
+        return ShipCommandRequest(bot.step(state.gameState, state.mapState))
+    }
 
     fun loop() {
         val join = join()

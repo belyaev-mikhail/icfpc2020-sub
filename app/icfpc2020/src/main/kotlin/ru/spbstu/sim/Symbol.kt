@@ -538,18 +538,6 @@ fun encode(msg: Symbol) = Protocol().encode(msg)
 fun decode(msg: String) = Protocol().decode(msg)
 
 fun main() {
-    val ps =
-        consListOf(
-            vec(Num(3))(Num(1)),
-            vec(Num(4))(Num(2))
-        )
-    println(draw(ps))
-    println(draw(ps).eval(mutableMapOf()))
-
-    println(s(i)(i)(i)(Num(2)))
-    println((s(i)(i)(i)(Num(2))).eval(mutableMapOf()))
-    println(b(b(b)).eval(mutableMapOf()))
-
     GSMS.playerKey = "5b38d34226a14d73878985ecdc25f79a"
     GSMS.serverUrl = "https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=${GSMS.playerKey}"
 

@@ -58,18 +58,18 @@ enum class GameRole {
 }
 
 data class MapState(
-        val tickLimit: Long,
-        val role: GameRole,
-        val mapParams1: List<Long>,
-        val planeRadius: Long,
-        val spaceRadius: Long,
-        val attackerStats: ShipState?
+    val tickLimit: Long,
+    val role: GameRole,
+    val mapParams1: List<Long>,
+    val planeRadius: Long,
+    val spaceRadius: Long,
+    val attackerStats: ShipState?
 )
 
 data class GameState(
-        val tick: Long,
-        val unknownParam: List<Long>,
-        val ships: List<GameShip>
+    val tick: Long,
+    val unknownParam: List<Long>,
+    val ships: List<GameShip>
 )
 
 data class GameResponse(
@@ -94,6 +94,10 @@ data class GameResponse(
             }
             val (_, stageIndexSym, mapStateSym, gameStateSym) = gameResponse
             val stage = GameStage.values()[stageIndexSym.asLong().toInt()]
+            if (stage == GameStage.FINISHED) {
+                System.err.println("Game finished")
+                return null
+            }
             val mapState = parseMapState(mapStateSym)
             val gameState = parseGameState(gameStateSym)
             return GameResponse(status, stage, mapState, gameState)
@@ -236,8 +240,8 @@ class Game(val bot: Bot) {
     private fun join() = JoinRequest(emptyList())
 
     private fun start(state: GameResponse): StartRequest {
-        bot.prepare(state.gameState, state.mapState)
-        return StartRequest(bot.initialShipState(state.gameState, state.mapState))
+        bot.prepare(state.mapState)
+        return StartRequest(bot.initialShipState(state.mapState))
     }
 
     private fun command(state: GameResponse): ShipCommandRequest {

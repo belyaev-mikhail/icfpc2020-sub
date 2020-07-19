@@ -1,6 +1,7 @@
 package ru.spbstu.sim.bot
 
 import ru.spbstu.sim.*
+import java.lang.Long.min
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -8,7 +9,8 @@ import kotlin.math.atan2
 class ShootingBot(val initialShipState: ShipState) : AbstractBot() {
     constructor() : this(ShipState(0, 0, 0, 1))
 
-    private fun Coordinates.angle(other: Coordinates) = atan2((this.y - other.y).toDouble(), (this.x - other.x).toDouble())
+    private fun Coordinates.angle(other: Coordinates) =
+        atan2((this.y - other.y).toDouble(), (this.x - other.x).toDouble())
 
     private fun isValidAngle(angle: Double): Boolean {
         val eps = PI / 16
@@ -34,6 +36,13 @@ class ShootingBot(val initialShipState: ShipState) : AbstractBot() {
 
     init {
         step { ally, gameState, mapState ->
+            val power = min(
+                ally.state.power.toLong(),
+                ((ally.maxHeatingLevel - (ally.heatLevel - Num(ally.state.coolPerTick.toLong()))) as Num).number
+            )
+            if (power == 0L) return@step listOf()
+
+
             val allyCoordinates = ally.nextApproximatePosition
 
             val role = mapState.role
@@ -44,7 +53,7 @@ class ShootingBot(val initialShipState: ShipState) : AbstractBot() {
                 isValidAngle(angle)
             } ?: return@step listOf()
 
-            listOf(ShipCommand.Shoot(ally.id, enemyShip.nextApproximatePosition, ally.state.power.toLong()))
+            listOf(ShipCommand.Shoot(ally.id, enemyShip.nextApproximatePosition, power))
         }
     }
 }

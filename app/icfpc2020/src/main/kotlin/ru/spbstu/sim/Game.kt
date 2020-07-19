@@ -174,8 +174,8 @@ data class GameShip(
     val position: Coordinates,
     val velocity: Coordinates,
     val state: ShipState,
-    val unknown1: Symbol,
-    val heatingBonus: Symbol,
+    val heatLevel: Symbol,
+    val maxHeatingLevel: Symbol,
     val accelerationBonus: Symbol,
     val commands: List<ShipCommand>
 ) {

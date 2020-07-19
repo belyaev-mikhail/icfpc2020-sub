@@ -1,9 +1,13 @@
 package ru.spbstu.sim.bot
 
 import ru.spbstu.sim.Coordinates
+import ru.spbstu.sim.Num
+import ru.spbstu.sim.Symbol
 import kotlin.math.abs
 
 const val ACCELERATION = 1L
+
+fun Symbol.long(): Long = (this as Num).number
 
 fun gravity(relTo: Coordinates): Coordinates {
     val (x, y) = relTo

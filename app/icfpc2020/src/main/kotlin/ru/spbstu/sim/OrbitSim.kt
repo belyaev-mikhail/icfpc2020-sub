@@ -1,5 +1,7 @@
 package ru.spbstu.sim
 
+import ru.spbstu.sim.bot.gravity
+import ru.spbstu.wheels.aStarSearch
 import java.awt.Color
 import java.awt.Dimension
 import java.awt.Graphics
@@ -15,7 +17,7 @@ import javax.swing.JPanel
 import javax.swing.SwingUtilities.invokeLater
 
 class Planet(val radius: Int)
-class MutShip(
+data class MutShip(
     var coords: Coordinates,
     var v: Coordinates,
     var a: Coordinates = Coordinates(0, 0)
@@ -23,8 +25,13 @@ class MutShip(
 
     fun tick() {
         coords += v
+        a += gravity(coords)
         v += a
         a = Coordinates(0, 0)
+    }
+
+    fun tick(times: Int) {
+        repeat(times) { tick() }
     }
 }
 class OrbitSim(val planet: Planet, ships: List<GameShip>) {
@@ -50,7 +57,6 @@ class OrbitSim(val planet: Planet, ships: List<GameShip>) {
 
     fun tick() {
         for((_, ship) in ships) {
-            ship.a += gravity(ship.coords)
             ship.tick()
         }
     }
@@ -63,14 +69,43 @@ class OrbitSim(val planet: Planet, ships: List<GameShip>) {
             else -> {}/**/
         }
     }
+
+    fun findPath(me: Long, to: Coordinates): List<MutShip>? {
+        val start = ships[me]!!
+
+        return aStarSearch(start,
+                { it.coords.manhattanDist(to).toDouble() },
+                { it.coords.manhattanDist(to) <= 10.0 && it.v.abs() < 5 },
+                {
+                    val simple = it.copy().apply { tick() }
+                    val neighbours = mutableListOf(simple)
+                    for(i in listOf(-1L, 0L, 1L)) {
+                        for (j in listOf(-1L, 0L, 1L)) {
+                            if(i == j && i == 0L) continue
+
+                            val accel = Coordinates(i, j)
+                            val me = it.copy()
+                            me.a += accel
+                            neighbours += me.apply { tick() }
+                        }
+                    }
+                    neighbours.filter { it.coords.manhattanDist(Coordinates(0, 0)) > planet.radius }
+                            .asSequence()
+                }
+        )
+
+    }
 }
 
-class OrbitPanel(val scale: Double = 7.0, val sim: OrbitSim): JPanel() {
+class OrbitPanel(val scale: Double = 2.0, val sim: OrbitSim): JPanel() {
     val center get() =
         Point2D.Double(this.width / 2.0, this.height / 2.0)
 
     val Coordinates.point: Point2D
         get() = Point2D.Double(center.x + x * scale, center.y + y * scale)
+
+
+    var path: List<Coordinates>? = null
 
     init {
         minimumSize = Dimension(800, 800)
@@ -78,6 +113,10 @@ class OrbitPanel(val scale: Double = 7.0, val sim: OrbitSim): JPanel() {
             override fun mouseClicked(e: MouseEvent?) {
                 invokeLater {
                     sim.tick()
+
+                    path = sim.findPath(0, Coordinates(-148, -148))?.map { it.coords }
+                    println(path)
+
                     this@OrbitPanel.repaint()
                 }
             }
@@ -89,7 +128,7 @@ class OrbitPanel(val scale: Double = 7.0, val sim: OrbitSim): JPanel() {
 
     fun Graphics2D.drawPoint(c: Coordinates) {
         val c = c.point
-        fill(Ellipse2D.Double(c.x - scale * 0.5, c.y - scale * 0.5, scale, scale))
+        fill(Ellipse2D.Double(c.x - scale * 2, c.y - scale * 2, scale * 4, scale * 4))
     }
 
     override fun getPreferredSize(): Dimension = Dimension(800, 800)
@@ -123,6 +162,11 @@ class OrbitPanel(val scale: Double = 7.0, val sim: OrbitSim): JPanel() {
             g.drawPoint(ship.coords + ship.v)
         }
 
+        g.paint = Color.ORANGE
+        for(p in path.orEmpty()) {
+            g.drawPoint(p)
+        }
+
     }
 }
 
@@ -132,7 +176,7 @@ fun main() {
             add(OrbitPanel(sim = OrbitSim(
                 Planet(16),
                 listOf()
-            ).apply { ships[1] = MutShip(Coordinates(148, 168), Coordinates(0, 0)) }
+            ).apply { ships[0] = MutShip(Coordinates(148, 148), Coordinates(0, 0)) }
             ))
         }
         .apply { pack(); defaultCloseOperation = JFrame.EXIT_ON_CLOSE }

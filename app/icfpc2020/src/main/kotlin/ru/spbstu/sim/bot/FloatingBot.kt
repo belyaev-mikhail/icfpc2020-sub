@@ -70,7 +70,7 @@ class FloatingBot : AbstractBot() {
             val willCrash = OrbitSim(planet, listOf(gameShip)).simulateFor(gameShip.id, simSteps).any { it.coords in planet }
 
             if (willCrash) {
-                move += gameShip.position.getGravityPull(section)
+                move += -gravity(gameShip.position)
                 System.err.println("Will crash in 5 turns, adding move to $move")
             }
 

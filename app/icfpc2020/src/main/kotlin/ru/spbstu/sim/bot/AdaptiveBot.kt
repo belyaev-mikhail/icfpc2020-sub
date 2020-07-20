@@ -7,6 +7,7 @@ import kotlin.math.pow
 fun computeDefenderStats(maxStats: Int): ShipState {
     var availableStats = maxStats - 2
     val copies = 5
+    availableStats -= 2.0.pow(copies).toInt() - 1
 
     var fuel = min(256, availableStats)
     availableStats -= fuel

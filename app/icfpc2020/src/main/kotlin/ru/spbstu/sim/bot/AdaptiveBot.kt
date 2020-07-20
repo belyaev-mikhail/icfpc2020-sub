@@ -27,7 +27,7 @@ fun computeAttackerStats(maxStats: Int): ShipState {
     val copies = 1
     availableStats -= 2.0.pow(copies).toInt() - 1
 
-    var fuel = min(256, availableStats)
+    var fuel = min(27, availableStats)
     availableStats -= fuel
 
     val cooling = min(8, availableStats / 12)

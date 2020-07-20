@@ -54,20 +54,19 @@ private fun Coordinates.getGravityPull(section: Int): Coordinates = when (sectio
 
 class FloatingBot : AbstractBot() {
     override fun initialShipState(mapState: MapState) = ShipState(0, 0, 0, 0)
-    private var currentTurn = 0
     lateinit var move: Coordinates
 
     init {
         step { gameShip, gameState, mapState, list ->
-            ++currentTurn
+            val currentTurn = (mapState.tickLimit - gameState.tick).toInt()
             val section = gameShip.position.getSection(mapState)
 
             if (currentTurn == 1) {
-                move = gameShip.position.getFlightDirection(section)
+                move = -gameShip.position.getFlightDirection(section)
             }
 
             if (currentTurn < 5) {
-                val gravityFix = -gameShip.position.getGravityPull(section)
+                val gravityFix = gameShip.position.getGravityPull(section)
                 listOf(ShipCommand.Accelerate(gameShip.id, move * 2 + gravityFix))
             } else {
                 listOf()

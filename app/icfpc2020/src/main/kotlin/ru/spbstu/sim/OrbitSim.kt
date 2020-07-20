@@ -296,10 +296,10 @@ fun main() {
     JFrame("Hello")
         .apply {
             add(OrbitPanel(sim = OrbitSim(
-                72, 255,
+                36, 255,
                 listOf()
-            ).apply { ships[0] = MutShip(Coordinates(112, 112), Coordinates(0, 0))
-                ships[1] = MutShip(Coordinates(-112, -112), Coordinates(0, 0))}
+            ).apply { ships[0] = MutShip(Coordinates(48, -48), Coordinates(0, 0))
+                ships[1] = MutShip(Coordinates(-48, 48), Coordinates(0, 0))}
             ))
         }
         .apply { pack(); defaultCloseOperation = JFrame.EXIT_ON_CLOSE }

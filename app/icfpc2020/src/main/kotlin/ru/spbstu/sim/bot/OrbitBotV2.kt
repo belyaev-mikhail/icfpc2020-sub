@@ -16,6 +16,9 @@ class OrbitBotV2 : AbstractBot() {
                     add(ShipCommand.Accelerate(ship.id, accelerate(ship)))
                 } else if (isEscapeAfter(minOf(10, map.tickLimit - game.tick), ship, map)) {
                     println("${game.tick} ESCAPE DETECTED")
+                    add(ShipCommand.Accelerate(ship.id, -accelerate(ship)))
+                } else {
+                    println("${game.tick} FLOATING")
                 }
             }
         }

@@ -5,7 +5,7 @@ import java.lang.Integer.min
 import kotlin.math.pow
 
 fun computeDefenderStats(maxStats: Int): ShipState {
-    var availableStats = maxStats - 2
+    var availableStats = maxStats - 1
     val copies = 5
     availableStats -= 2.0.pow(copies).toInt() - 1
 

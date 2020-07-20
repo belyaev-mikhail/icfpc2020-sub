@@ -9,7 +9,7 @@ class FollowerBot : AbstractBot() {
         step { ship, state, map, _ ->
             val enemy = state.ships.first { it.id != ship.id }
 
-            val target = MutShip(enemy.position, enemy.velocity).apply { tick(5) }.coords
+            val target = MutShip(enemy.position, enemy.velocity).apply { tick(2) }.coords
 
             val sim = OrbitSim(Planet(map.planeRadius.toInt()), state.ships)
 

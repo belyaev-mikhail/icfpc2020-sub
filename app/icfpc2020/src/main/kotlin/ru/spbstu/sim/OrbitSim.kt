@@ -2,19 +2,18 @@ package ru.spbstu.sim
 
 import ru.spbstu.sim.bot.gravity
 import ru.spbstu.wheels.aStarSearch
-import java.awt.Color
-import java.awt.Dimension
-import java.awt.Graphics
-import java.awt.Graphics2D
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
+import java.awt.*
+import java.awt.event.*
 import java.awt.geom.Ellipse2D
 import java.awt.geom.Point2D
 import java.awt.geom.Rectangle2D
 import java.lang.Math.abs
+import javax.swing.AbstractAction
 import javax.swing.JFrame
 import javax.swing.JPanel
+import javax.swing.KeyStroke
 import javax.swing.SwingUtilities.invokeLater
+import javax.swing.text.Keymap
 
 class Planet(val radius: Int)
 data class MutShip(
@@ -33,6 +32,9 @@ data class MutShip(
     fun tick(times: Int) {
         repeat(times) { tick() }
     }
+
+    override fun equals(other: Any?): Boolean = other is MutShip && other.coords == coords
+    override fun hashCode(): Int = coords.hashCode()
 }
 class OrbitSim(val planetRadius: Long, val spaceRadius: Long, ships: List<GameShip>) {
     val ships: MutableMap<Long, MutShip> = mutableMapOf()
@@ -97,6 +99,55 @@ class OrbitSim(val planetRadius: Long, val spaceRadius: Long, ships: List<GameSh
         )
 
     }
+
+    fun findStableOrbit(me: Long): List<MutShip>? {
+        val start = ships[me]!!
+        println("start = $start")
+
+        return aStarSearch(start,
+                { it.coords.manhattanDist(it.coords.swap()).toDouble() },
+                goal@{ship ->
+                    //MutShip(coords=Coordinates(x=47, y=12), v=Coordinates(x=-1, y=0), a=Coordinates(x=1, y=1))
+                    val mt = ship.copy()
+                    (0..(planetRadius.toInt() * 2000)).any {
+                        mt.tick()
+                        if(mt.coords.abs() < planetRadius || mt.coords.abs() > spaceRadius) return@goal false
+                        (mt == ship && mt.v == ship.v && !mt.v.isZero())
+                    }
+//                    repeat(planetRadius.toInt() * 6000) {
+//                        mt.tick()
+//                        res = res and (mt.coords.abs() > planetRadius && mt.coords.abs() < spaceRadius)
+//                        if(!res) return@goal false
+//                        if(ship == mt && ship.v == mt.v) return@goal true
+//                    }
+//                    res
+                },
+                {
+                    val simple = it.copy().apply { tick() }
+                    val neighbours = mutableListOf(simple)
+                    for(i in listOf(-1L, 0L, 1L)) {
+                        for (j in listOf(-1L, 0L, 1L)) {
+                            if(i == j && i == 0L) continue
+
+                            val accel = Coordinates(i, j)
+                            val me = it.copy()
+                            me.a += accel
+                            neighbours += me.apply { tick() }
+                        }
+                    }
+                    neighbours.filter {
+                        it.v.abs() < 10 && it.coords.abs() > planetRadius && it.coords.abs() < spaceRadius }
+                            .asSequence()
+                }
+        )
+
+    }
+}
+
+fun Action(body: (ActionEvent) -> Unit) = object: AbstractAction() {
+    override fun actionPerformed(e: ActionEvent) {
+        return body(e)
+    }
 }
 
 class OrbitPanel(val scale: Double = 2.0, val sim: OrbitSim): JPanel() {
@@ -107,43 +158,80 @@ class OrbitPanel(val scale: Double = 2.0, val sim: OrbitSim): JPanel() {
         get() = Point2D.Double(center.x + x * scale, center.y + y * scale)
 
 
-    var path: List<MutShip>? = null
+    var path: MutableList<MutShip> = mutableListOf()
+    var built = false
+    fun tick() {
+        val target = sim.ships[1]!!
+
+        fun isValid(coords: Coordinates) = coords.abs() > sim.planetRadius && coords.abs() < sim.spaceRadius
+
+        if(path.isEmpty() && !built) {
+            built = true
+            path = sim.findStableOrbit(0)?.toMutableList() ?: mutableListOf()
+        }
+        println("Path: $path")
+
+        sim.tick()
+
+        if(path.isNotEmpty()) {
+            val rev = path.reversed()
+            val from = rev[0]
+            val to = rev.getOrNull(1) ?: sim.ships[0]!!
+            to.v = to.coords - from.coords
+            val accel = to.v - from.v - gravity(from.coords)
+            if(accel != null && !accel.isZero()) {
+                println(ShipCommand.Accelerate(0, accel))
+                sim.applyCommand(ShipCommand.Accelerate(0, accel))
+            }
+            println("Expected: ${path.last()}")
+            println("Actual: ${sim.ships[0]}")
+            println("Target: $to")
+            println("Actual next: ${sim.ships[0]!!.copy().apply { tick() } }")
+            path.removeAt(path.lastIndex)
+        } else {
+            println("out of moves")
+        }
+
+        this@OrbitPanel.repaint()
+    }
+
+    fun onKey(key: Int, action: () -> Unit) {
+        val skey = "VK_$key"
+        this.inputMap.put(KeyStroke.getKeyStroke(key, 0), skey)
+        this.actionMap.put(skey, Action { action() })
+    }
 
     init {
         minimumSize = Dimension(800, 800)
+        val keyMapping = mapOf(
+                KeyEvent.VK_NUMPAD3 to Coordinates(1, 1),
+                KeyEvent.VK_NUMPAD2 to Coordinates(0, 1),
+                KeyEvent.VK_NUMPAD1 to Coordinates(-1, 1),
+                KeyEvent.VK_NUMPAD4 to Coordinates(-1, 0),
+                KeyEvent.VK_NUMPAD6 to Coordinates(1, 0),
+                KeyEvent.VK_NUMPAD7 to Coordinates(-1, -1),
+                KeyEvent.VK_NUMPAD8 to Coordinates(0, -1),
+                KeyEvent.VK_NUMPAD9 to Coordinates(1, -1)
+        )
+        onKey(KeyEvent.VK_SPACE) {
+            tick()
+        }
+        for((k, v) in keyMapping) {
+            onKey(k) {
+                println("Pressed ${KeyStroke.getKeyStroke(k, 0).keyChar}")
+                invokeLater {
+                    val me = sim.ships[0]!!.copy()
+                    me.a += v
+                    me.tick()
+                    path.add(0, me)
+                    tick()
+                }
+            }
+        }
         this.addMouseListener(object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent?) {
                 invokeLater {
-                    val target = sim.ships[1]!!
-
-                    fun isValid(coords: Coordinates) = coords.abs() > sim.planetRadius && coords.abs() < sim.spaceRadius
-
-                    var tCoords = target.coords
-                    if(!isValid(tCoords)) {
-                        System.err.println("Target out of reach")
-                    } else {
-                        repeat(5) {
-                            target.tick()
-                            if(isValid(target.coords)) tCoords = target.coords
-                        }
-                        println("Target: ${tCoords}")
-                        path = sim.findPath(0, tCoords) ?: System.err.println("NO PATH").let { null }
-                    }
-
-                    sim.tick()
-
-                    if(path != null) {
-                        val rev = path!!.reversed()
-                        val accel = rev.getOrNull(1)?.v?.minus(rev[0].v)?.minus(gravity(rev[0].coords))
-                        if(accel != null && !accel.isZero()) {
-                            println(ShipCommand.Accelerate(0, accel))
-                            sim.applyCommand(ShipCommand.Accelerate(0, accel))
-                        }
-
-                    }
-                    println(path)
-
-                    this@OrbitPanel.repaint()
+                    tick()
                 }
             }
         })
@@ -172,8 +260,16 @@ class OrbitPanel(val scale: Double = 2.0, val sim: OrbitSim): JPanel() {
 
         g.paint = Color.RED
 
-        for((_, ship) in sim.ships) {
+        for((id, ship) in sim.ships) {
+            g.paint = Color.RED
             g.drawPoint(ship.coords)
+            g.paint = Color(255, 0, 0, 30)
+            if(id != 0L) continue
+            val mt = ship.copy()
+            (0..(sim.planetRadius.toInt() * 30)).forEach {
+                mt.tick()
+                g.drawPoint(mt.coords)
+            }
         }
 
         g.paint = Color.BLUE.brighter()
@@ -200,10 +296,10 @@ fun main() {
     JFrame("Hello")
         .apply {
             add(OrbitPanel(sim = OrbitSim(
-                36, 255,
+                72, 255,
                 listOf()
-            ).apply { ships[0] = MutShip(Coordinates(48, 12), Coordinates(0, 0))
-                ships[1] = MutShip(Coordinates(-48, -12), Coordinates(0, 0))}
+            ).apply { ships[0] = MutShip(Coordinates(112, 112), Coordinates(0, 0))
+                ships[1] = MutShip(Coordinates(-112, -112), Coordinates(0, 0))}
             ))
         }
         .apply { pack(); defaultCloseOperation = JFrame.EXIT_ON_CLOSE }

@@ -51,7 +51,7 @@ private fun Coordinates.getGravityPull(section: Int): Coordinates = when (sectio
 
 class FloatingBot : AbstractBot() {
     override fun initialShipState(mapState: MapState) = ShipState(0, 0, 0, 0)
-    private val simSteps = 5
+    private val simSteps = 3
 
     init {
         step { gameShip, gameState, mapState, list ->

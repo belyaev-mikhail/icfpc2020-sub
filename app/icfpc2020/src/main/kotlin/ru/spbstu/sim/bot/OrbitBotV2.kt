@@ -13,10 +13,10 @@ class OrbitBotV2 : AbstractBot() {
             ArrayList<ShipCommand>().apply {
                 if (isDieAfter(minOf(map.planeRadius / 2, map.tickLimit - game.tick), ship, map)) {
                     println("${game.tick} DEAD DETECTED")
-                    add(ShipCommand.Accelerate(ship.id, accelerate(ship)))
+                    add(ShipCommand.Accelerate(ship.id, acceleration(ship)))
                 } else if (isEscapeAfter(minOf(10, map.tickLimit - game.tick), ship, map)) {
                     println("${game.tick} ESCAPE DETECTED")
-//                    add(ShipCommand.Accelerate(ship.id, -accelerate(ship)))
+                    add(ShipCommand.Accelerate(ship.id, braking(ship)))
                 } else {
                     println("${game.tick} FLOATING")
                 }
@@ -50,12 +50,12 @@ class OrbitBotV2 : AbstractBot() {
         }
     }
 
-    private fun accelerate(ship: GameShip): Coordinates {
+    private fun acceleration(ship: GameShip): Coordinates {
         val position = ship.position
         val velocity = ship.velocity
         val gravity = gravity(position)
 
-        println("DATA: position=$position, velocity=$velocity, gravity=$gravity")
+        println("ACCELERATION: position=$position, velocity=$velocity, gravity=$gravity")
 
         return when {
             gravity.x != 0L ->
@@ -74,6 +74,26 @@ class OrbitBotV2 : AbstractBot() {
                     }
                     else -> Coordinates(-velocity.x / abs(velocity.x), -gravity.y)
                 }
+            else -> TODO()
+        }
+    }
+
+    private fun braking(ship: GameShip): Coordinates {
+        val position = ship.position
+        val velocity = ship.velocity
+        val gravity = gravity(position)
+
+        println("BRACING: position=$position, velocity=$velocity, gravity=$gravity")
+
+        return when {
+            gravity.x != 0L -> when (position.y) {
+                0L -> Coordinates(gravity.x, 1)
+                else -> Coordinates(gravity.x, position.y / abs(position.y))
+            }
+            gravity.y != 0L -> when (position.x) {
+                0L -> Coordinates(1, gravity.y)
+                else -> Coordinates(position.x / abs(position.x), gravity.y)
+            }
             else -> TODO()
         }
     }

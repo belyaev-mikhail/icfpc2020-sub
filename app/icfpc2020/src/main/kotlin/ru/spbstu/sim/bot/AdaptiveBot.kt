@@ -6,7 +6,7 @@ import kotlin.math.pow
 
 fun computeDefenderStats(maxStats: Int): ShipState {
     var availableStats = maxStats - 2
-    val copies = 1
+    val copies = 5
 
     var fuel = min(256, availableStats)
     availableStats -= fuel
@@ -14,12 +14,12 @@ fun computeDefenderStats(maxStats: Int): ShipState {
     val cooling = availableStats / 12
     availableStats -= 12 * cooling
 
-    val attack = availableStats / 4
-    availableStats -= 4 * attack
+//    val attack = availableStats / 4
+//    availableStats -= 4 * attack
 
     fuel += availableStats
 
-    return ShipState(fuel, attack, cooling, copies)
+    return ShipState(fuel, 0, cooling, copies)
 }
 
 fun computeAttackerStats(maxStats: Int): ShipState {

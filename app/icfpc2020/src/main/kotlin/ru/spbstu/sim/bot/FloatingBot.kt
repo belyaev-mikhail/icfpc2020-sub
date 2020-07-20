@@ -58,7 +58,7 @@ class FloatingBot : AbstractBot() {
 
     init {
         step { gameShip, gameState, mapState, list ->
-            val currentTurn = (mapState.tickLimit - gameState.tick).toInt()
+            val currentTurn = gameState.tick.toInt()
             val section = gameShip.position.getSection(mapState)
 
             if (currentTurn == 1) {

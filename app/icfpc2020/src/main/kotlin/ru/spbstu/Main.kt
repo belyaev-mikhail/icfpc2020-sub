@@ -20,7 +20,7 @@ fun main(args: Array<String>) {
         ),
         CompositeBot(
             ShipState(256, 0, 15, 1),
-            StandingBot(),
+            HermitBot(),
             CopyCoolerBot()
         )
     )

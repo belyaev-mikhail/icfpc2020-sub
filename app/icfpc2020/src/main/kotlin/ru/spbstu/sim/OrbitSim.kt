@@ -24,9 +24,9 @@ data class MutShip(
 ) {
 
     fun tick() {
-        coords += v
         a += gravity(coords)
         v += a
+        coords += v
         a = Coordinates(0, 0)
     }
 
@@ -124,7 +124,7 @@ class OrbitPanel(val scale: Double = 2.0, val sim: OrbitSim): JPanel() {
 
                     if(path != null) {
                         val rev = path!!.reversed()
-                        val accel = rev.getOrNull(1)?.v?.minus(rev[0].v)
+                        val accel = rev.getOrNull(1)?.v?.minus(rev[0].v)?.minus(gravity(rev[0].coords))
                         if(accel != null && !accel.isZero()) {
                             println(ShipCommand.Accelerate(0, accel))
                             sim.applyCommand(ShipCommand.Accelerate(0, accel))

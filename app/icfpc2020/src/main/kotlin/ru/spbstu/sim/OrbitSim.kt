@@ -17,7 +17,7 @@ import javax.swing.JPanel
 import javax.swing.SwingUtilities.invokeLater
 
 class Planet(val radius: Int) {
-    operator fun contains(coords: Coordinates) = abs(coords.x) <= radius || abs(coords.y) <= radius
+    operator fun contains(coords: Coordinates) = abs(coords.x) <= radius && abs(coords.y) <= radius
 }
 data class MutShip(
     var coords: Coordinates,

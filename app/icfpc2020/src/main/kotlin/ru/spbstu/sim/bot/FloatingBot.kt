@@ -58,17 +58,20 @@ class FloatingBot : AbstractBot() {
             val planet = Planet(mapState.planeRadius.toInt())
             val currentTurn = gameState.tick.toInt()
             val section = gameShip.position.getSection(mapState)
+            System.err.println("Section $section")
 
             var move = Coordinates(0, 0)
 
             if (currentTurn == 0 && isAbovePlanet(gameShip.position, planet.radius.toLong())) {
                 move += -gameShip.position.getFlightDirection(section)
+                System.err.println("Standing above planet, adding move to $move")
             }
 
             val willCrash = OrbitSim(planet, listOf(gameShip)).simulateFor(gameShip.id, simSteps).any { it.coords in planet }
 
             if (willCrash) {
                 move += gameShip.position.getGravityPull(section)
+                System.err.println("Will crash in 5 turns, adding move to $move")
             }
 
             when (move) {

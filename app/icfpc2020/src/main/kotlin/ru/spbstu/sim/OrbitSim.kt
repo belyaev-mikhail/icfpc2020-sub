@@ -61,6 +61,10 @@ class OrbitSim(val planet: Planet, ships: List<GameShip>) {
         }
     }
 
+    fun tick(times: Int) {
+        repeat(times) { tick() }
+    }
+
     fun applyCommand(sc: ShipCommand) {
         when(sc) {
             is ShipCommand.Accelerate -> {

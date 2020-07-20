@@ -77,7 +77,8 @@ data class MapState(
 data class GameState(
     val tick: Long,
     val unknownParam: List<Long>,
-    val ships: List<GameShip>
+    val ships: List<GameShip>,
+    val shipMap: Map<Long, GameShip> = ships.map { it.id to it }.toMap()
 )
 
 data class GameResponse(

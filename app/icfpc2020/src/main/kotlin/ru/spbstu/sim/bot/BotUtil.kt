@@ -1,6 +1,7 @@
 package ru.spbstu.sim.bot
 
 import ru.spbstu.sim.Coordinates
+import ru.spbstu.sim.GameShip
 import ru.spbstu.sim.Num
 import ru.spbstu.sim.Symbol
 import kotlin.math.abs
@@ -22,3 +23,16 @@ fun gravity(relTo: Coordinates): Coordinates {
 fun isAbovePlanet(relTo: Coordinates, planetRadius: Long): Boolean {
     return abs(relTo.x) < planetRadius || abs(relTo.y) < planetRadius
 }
+
+val GameShip.explosionRadius: Int
+    get() {
+        val sum = state.fuel + state.power + state.coolPerTick + state.numberOfCopies
+        return when {
+            sum < 1 -> 0
+            sum == 1 -> 4
+            sum == 2 -> 5
+            sum in 3..14 -> 5
+            sum in 15..510 -> 8
+            else -> 12
+        }
+    }

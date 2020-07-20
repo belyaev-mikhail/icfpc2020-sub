@@ -1,6 +1,7 @@
 package ru.spbstu.sim.bot
 
 import ru.spbstu.sim.*
+import kotlin.math.abs
 
 
 class StandingBot : AbstractBot() {
@@ -20,7 +21,7 @@ class StandingBot : AbstractBot() {
         step { ship, state, map, _ ->
 
             fun default(): List<ShipCommand> {
-                if (ship.velocity.abs() <= 1) {
+                if (abs(ship.velocity.x) + abs(ship.velocity.y) < 2) {
                     var velocity = gravity(ship.position)
                     velocity += velocity.randomVector
                     return listOf(ShipCommand.Accelerate(ship.id, velocity))

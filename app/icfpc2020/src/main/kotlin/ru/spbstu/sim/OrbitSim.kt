@@ -75,7 +75,8 @@ class OrbitSim(val planetRadius: Long, val spaceRadius: Long, ships: List<GameSh
 
         return aStarSearch(start,
                 { it.coords.manhattanDist(to).toDouble() / 5.0 },
-                { it.coords.manhattanDist(to) <= 10.0 && it.v.abs() < 10 },
+                { it.coords.manhattanDist(to) <= 32.0 && it.v.abs() < 10 &&
+                        (it.coords.x == to.x || it.coords.y == to.y) },
                 {
                     val simple = it.copy().apply { tick() }
                     val neighbours = mutableListOf(simple)

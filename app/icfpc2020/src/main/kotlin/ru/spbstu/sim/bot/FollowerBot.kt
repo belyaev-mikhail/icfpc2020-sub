@@ -10,7 +10,7 @@ class FollowerBot : AbstractBot() {
 
     init {
         step { ship, state, map, _ ->
-            val default = ShipCommand.Accelerate(ship.id, -gravity(ship.position))
+            val default = ShipCommand.Accelerate(ship.id, gravity(ship.position))
             val enemy = state.ships.first { it.id != ship.id }
 
             fun isValid(coords: Coordinates) = coords.abs() > map.planeRadius && coords.abs() < map.spaceRadius

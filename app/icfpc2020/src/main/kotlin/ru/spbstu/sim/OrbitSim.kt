@@ -16,7 +16,9 @@ import javax.swing.JFrame
 import javax.swing.JPanel
 import javax.swing.SwingUtilities.invokeLater
 
-class Planet(val radius: Int)
+class Planet(val radius: Int) {
+    operator fun contains(coords: Coordinates) = abs(coords.x) <= radius || abs(coords.y) <= radius
+}
 data class MutShip(
     var coords: Coordinates,
     var v: Coordinates,
@@ -68,6 +70,11 @@ class OrbitSim(val planet: Planet, ships: List<GameShip>) {
             }
             else -> {}/**/
         }
+    }
+
+    fun simulateFor(me: Long, ticks: Int): List<MutShip>  = (0..ticks).map {
+        this.tick()
+        ships[me]!!
     }
 
     fun findPath(me: Long, to: Coordinates): List<MutShip>? {

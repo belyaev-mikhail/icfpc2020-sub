@@ -1,9 +1,6 @@
 package ru.spbstu.sim.bot
 
-import ru.spbstu.sim.Coordinates
-import ru.spbstu.sim.MapState
-import ru.spbstu.sim.ShipCommand
-import ru.spbstu.sim.ShipState
+import ru.spbstu.sim.*
 import kotlin.math.abs
 
 private val Coordinates.isDiagonal get() = abs(x) == abs(y)
@@ -54,22 +51,29 @@ private fun Coordinates.getGravityPull(section: Int): Coordinates = when (sectio
 
 class FloatingBot : AbstractBot() {
     override fun initialShipState(mapState: MapState) = ShipState(0, 0, 0, 0)
-    lateinit var move: Coordinates
+    private val simSteps = 5
 
     init {
         step { gameShip, gameState, mapState, list ->
+            val planet = Planet(mapState.planeRadius.toInt())
             val currentTurn = gameState.tick.toInt()
             val section = gameShip.position.getSection(mapState)
 
-            if (currentTurn == 0) {
-                move = -gameShip.position.getFlightDirection(section)
+            var move = Coordinates(0, 0)
+
+            if (currentTurn == 0 && isAbovePlanet(gameShip.position, planet.radius.toLong())) {
+                move += -gameShip.position.getFlightDirection(section)
             }
 
-            if (currentTurn < 2) {
-                val gravityFix = gameShip.position.getGravityPull(section)
-                listOf(ShipCommand.Accelerate(gameShip.id, move * 2 + gravityFix))
-            } else {
-                listOf()
+            val willCrash = OrbitSim(planet, listOf(gameShip)).simulateFor(gameShip.id, simSteps).any { it.coords in planet }
+
+            if (willCrash) {
+                move += gameShip.position.getGravityPull(section)
+            }
+
+            when (move) {
+                Coordinates(0, 0) -> listOf()
+                else -> listOf(ShipCommand.Accelerate(gameShip.id, move))
             }
         }
     }

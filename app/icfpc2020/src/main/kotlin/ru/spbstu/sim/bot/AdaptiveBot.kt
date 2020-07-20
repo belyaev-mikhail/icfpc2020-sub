@@ -44,6 +44,18 @@ fun computeAttackerStats(maxStats: Int): ShipState {
 
 class AdaptiveBot(val attackerBot: Bot, val defenderBot: Bot) : Bot {
     lateinit var currentBot: Bot
+
+    override fun prepare(mapState: MapState) {
+        when (mapState.role) {
+            GameRole.DEFENDER -> {
+                defenderBot.prepare(mapState)
+            }
+            GameRole.ATTACKER -> {
+                attackerBot.prepare(mapState)
+            }
+        }
+    }
+
     override fun initialShipState(mapState: MapState) = when (mapState.role) {
         GameRole.DEFENDER -> {
             currentBot = defenderBot

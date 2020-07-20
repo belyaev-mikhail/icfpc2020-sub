@@ -11,7 +11,7 @@ class OrbitBotV2 : AbstractBot() {
     init {
         step { ship, game, map, _ ->
             ArrayList<ShipCommand>().apply {
-                if (isDieAfter(minOf(map.planeRadius, map.tickLimit - game.tick), ship, map)) {
+                if (isDieAfter(minOf(map.planeRadius / 2, map.tickLimit - game.tick), ship, map)) {
                     println("${game.tick} DEAD DETECTED")
                     add(ShipCommand.Accelerate(ship.id, accelerate(ship)))
                 } else if (isEscapeAfter(minOf(10, map.tickLimit - game.tick), ship, map)) {

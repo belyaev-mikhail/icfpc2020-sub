@@ -24,9 +24,9 @@ data class MutShip(
 ) {
 
     fun tick() {
-        coords += v
         a += gravity(coords)
         v += a
+        coords += v
         a = Coordinates(0, 0)
     }
 
@@ -34,7 +34,7 @@ data class MutShip(
         repeat(times) { tick() }
     }
 }
-class OrbitSim(val planet: Planet, ships: List<GameShip>) {
+class OrbitSim(val planetRadius: Long, val spaceRadius: Long, ships: List<GameShip>) {
     val ships: MutableMap<Long, MutShip> = mutableMapOf()
     init {
         for(ship in ships) {
@@ -78,8 +78,9 @@ class OrbitSim(val planet: Planet, ships: List<GameShip>) {
         val start = ships[me]!!
 
         return aStarSearch(start,
-                { it.coords.manhattanDist(to).toDouble() },
-                { it.coords.manhattanDist(to) <= 10.0 && it.v.abs() < 5 },
+                { it.coords.manhattanDist(to).toDouble() / 5.0 },
+                { it.coords.manhattanDist(to) <= 32.0 && it.v.abs() < 10 &&
+                        (it.coords.x == to.x || it.coords.y == to.y) },
                 {
                     val simple = it.copy().apply { tick() }
                     val neighbours = mutableListOf(simple)
@@ -93,7 +94,8 @@ class OrbitSim(val planet: Planet, ships: List<GameShip>) {
                             neighbours += me.apply { tick() }
                         }
                     }
-                    neighbours.filter { it.coords.manhattanDist(Coordinates(0, 0)) > planet.radius }
+                    neighbours.filter {
+                        it.v.abs() < 10 && it.coords.abs() > planetRadius && it.coords.abs() < spaceRadius }
                             .asSequence()
                 }
         )
@@ -109,16 +111,40 @@ class OrbitPanel(val scale: Double = 2.0, val sim: OrbitSim): JPanel() {
         get() = Point2D.Double(center.x + x * scale, center.y + y * scale)
 
 
-    var path: List<Coordinates>? = null
+    var path: List<MutShip>? = null
 
     init {
         minimumSize = Dimension(800, 800)
         this.addMouseListener(object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent?) {
                 invokeLater {
+                    val target = sim.ships[1]!!
+
+                    fun isValid(coords: Coordinates) = coords.abs() > sim.planetRadius && coords.abs() < sim.spaceRadius
+
+                    var tCoords = target.coords
+                    if(!isValid(tCoords)) {
+                        System.err.println("Target out of reach")
+                    } else {
+                        repeat(5) {
+                            target.tick()
+                            if(isValid(target.coords)) tCoords = target.coords
+                        }
+                        println("Target: ${tCoords}")
+                        path = sim.findPath(0, tCoords) ?: System.err.println("NO PATH").let { null }
+                    }
+
                     sim.tick()
 
-                    path = sim.findPath(0, Coordinates(-148, -148))?.map { it.coords }
+                    if(path != null) {
+                        val rev = path!!.reversed()
+                        val accel = rev.getOrNull(1)?.v?.minus(rev[0].v)?.minus(gravity(rev[0].coords))
+                        if(accel != null && !accel.isZero()) {
+                            println(ShipCommand.Accelerate(0, accel))
+                            sim.applyCommand(ShipCommand.Accelerate(0, accel))
+                        }
+
+                    }
                     println(path)
 
                     this@OrbitPanel.repaint()
@@ -142,10 +168,10 @@ class OrbitPanel(val scale: Double = 2.0, val sim: OrbitSim): JPanel() {
         check(g is Graphics2D)
 
         g.draw(Rectangle2D.Double(center.x, center.y, 0.0, 0.0).apply {
-            add(Coordinates(0, sim.planet.radius.toLong()).point)
-            add(Coordinates(0, -sim.planet.radius.toLong()).point)
-            add(Coordinates(sim.planet.radius.toLong(), 0).point)
-            add(Coordinates(-sim.planet.radius.toLong(), 0).point)
+            add(Coordinates(0, sim.planetRadius.toLong()).point)
+            add(Coordinates(0, -sim.planetRadius.toLong()).point)
+            add(Coordinates(sim.planetRadius.toLong(), 0).point)
+            add(Coordinates(-sim.planetRadius.toLong(), 0).point)
         })
 
         g.paint = Color.RED
@@ -168,7 +194,7 @@ class OrbitPanel(val scale: Double = 2.0, val sim: OrbitSim): JPanel() {
 
         g.paint = Color.ORANGE
         for(p in path.orEmpty()) {
-            g.drawPoint(p)
+            g.drawPoint(p.coords)
         }
 
     }
@@ -178,9 +204,10 @@ fun main() {
     JFrame("Hello")
         .apply {
             add(OrbitPanel(sim = OrbitSim(
-                Planet(16),
+                36, 255,
                 listOf()
-            ).apply { ships[0] = MutShip(Coordinates(148, 148), Coordinates(0, 0)) }
+            ).apply { ships[0] = MutShip(Coordinates(48, 12), Coordinates(0, 0))
+                ships[1] = MutShip(Coordinates(-48, -12), Coordinates(0, 0))}
             ))
         }
         .apply { pack(); defaultCloseOperation = JFrame.EXIT_ON_CLOSE }

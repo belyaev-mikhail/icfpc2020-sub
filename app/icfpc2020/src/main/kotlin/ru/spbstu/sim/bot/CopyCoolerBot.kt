@@ -7,7 +7,9 @@ import ru.spbstu.sim.ShipState
 class CopyCoolerBot : AbstractBot() {
     init {
         step { ship, gameState, mapState, prevCommands ->
-            val additionalCooling = prevCommands.fold(0L) { acc, cmd ->
+            fun default(): List<ShipCommand> = listOf()
+
+            val additionalHeat = prevCommands.fold(0L) { acc, cmd ->
                 when (cmd) {
                     is ShipCommand.Accelerate -> acc + 8
                     is ShipCommand.Shoot -> acc + cmd.power
@@ -15,9 +17,11 @@ class CopyCoolerBot : AbstractBot() {
                 }
             }
 
-            if (ship.heatLevel + additionalCooling < ship.maxHeatingLevel) return@step listOf()
+            if (ship.heatLevel + additionalHeat - ship.state.coolPerTick < ship.maxHeatingLevel - 10)
+                return@step default()
 
-            if (ship.state.numberOfCopies == 1) return@step listOf()
+            if (ship.state.numberOfCopies == 1)
+                return@step default()
 
             val (fuel, power, cooling, clones) = ship.state
 

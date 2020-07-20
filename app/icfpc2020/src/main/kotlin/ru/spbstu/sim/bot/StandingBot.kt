@@ -24,7 +24,10 @@ class StandingBot : AbstractBot() {
                 return listOf(ShipCommand.Accelerate(ship.id, velocity + velocity.randomVector))
             }
 
-            val sim = OrbitSim(Planet(map.planeRadius.toInt()), state.ships.filter { it.role != ship.role })
+            fun acceleration(from: MutShip, to: MutShip) =
+                to.v - from.v - gravity(from.coords)
+
+            val sim = OrbitSim(map.planeRadius, map.planeRadius, state.ships.filter { it.role != ship.role })
             sim.tick(1)
 
             val kamikaze = sim.ships.entries.filter { (id, e) ->
@@ -44,13 +47,20 @@ class StandingBot : AbstractBot() {
                 return@step default()
             }
 
-            val sim2 = OrbitSim(Planet(map.planeRadius.toInt()), state.ships.filter { it.id == ship.id })
+            val sim2 = OrbitSim(map.planeRadius, map.spaceRadius, state.ships.filter { it.id == ship.id })
 
-            val path = sim2.findPath(ship.id, target) ?: return@step listOf()
+            val path = sim2.findPath(ship.id, target) ?: return@step default()
             val pp = path.reversed()
-            val accel = pp[1].v - pp[0].v
 
-            if (accel.isZero()) listOf() else listOf(ShipCommand.Accelerate(ship.id, accel))
+            val accel = when {
+                pp.size > 1 -> acceleration(pp[0], pp[1])
+                else -> return@step default()
+            }
+
+            when {
+                accel.isZero() -> default()
+                else -> listOf(ShipCommand.Accelerate(ship.id, -accel))
+            }
         }
     }
 }

@@ -65,7 +65,7 @@ class FloatingBot : AbstractBot() {
                 move = -gameShip.position.getFlightDirection(section)
             }
 
-            if (currentTurn < 5) {
+            if (currentTurn < 2) {
                 val gravityFix = gameShip.position.getGravityPull(section)
                 listOf(ShipCommand.Accelerate(gameShip.id, move * 2 + gravityFix))
             } else {

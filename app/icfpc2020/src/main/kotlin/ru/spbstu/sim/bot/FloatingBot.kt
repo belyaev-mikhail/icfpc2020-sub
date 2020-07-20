@@ -63,7 +63,7 @@ class FloatingBot : AbstractBot() {
             var move = Coordinates(0, 0)
 
             if (currentTurn == 0 && isAbovePlanet(gameShip.position, planet.radius.toLong())) {
-                move += -gameShip.position.getFlightDirection(section)
+                move += -gameShip.position.getFlightDirection(section) * 2
                 System.err.println("Standing above planet, adding move to $move")
             }
 
@@ -72,7 +72,7 @@ class FloatingBot : AbstractBot() {
             val willCrash = futureSteps.any { it.coords in planet }
 
             if (willCrash) {
-                move += gravity(gameShip.position)
+                move += gravity(gameShip.position) * 2
                 System.err.println("Will crash in 5 turns, adding move to $move")
             }
 

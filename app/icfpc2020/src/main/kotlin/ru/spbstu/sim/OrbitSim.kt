@@ -74,8 +74,8 @@ class OrbitSim(val planetRadius: Long, val spaceRadius: Long, ships: List<GameSh
         val start = ships[me]!!
 
         return aStarSearch(start,
-                { it.coords.manhattanDist(to).toDouble() },
-                { it.coords.manhattanDist(to) <= 10.0 && it.v.abs() < 5 },
+                { it.coords.manhattanDist(to).toDouble() / 5.0 },
+                { it.coords.manhattanDist(to) <= 10.0 && it.v.abs() < 10 },
                 {
                     val simple = it.copy().apply { tick() }
                     val neighbours = mutableListOf(simple)
@@ -89,7 +89,8 @@ class OrbitSim(val planetRadius: Long, val spaceRadius: Long, ships: List<GameSh
                             neighbours += me.apply { tick() }
                         }
                     }
-                    neighbours.filter { it.coords.abs() > planetRadius && it.coords.abs() < spaceRadius }
+                    neighbours.filter {
+                        it.v.abs() < 10 && it.coords.abs() > planetRadius && it.coords.abs() < spaceRadius }
                             .asSequence()
                 }
         )
@@ -112,13 +113,21 @@ class OrbitPanel(val scale: Double = 2.0, val sim: OrbitSim): JPanel() {
         this.addMouseListener(object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent?) {
                 invokeLater {
-                    val enemy = sim.ships[1]!!
+                    val target = sim.ships[1]!!
 
-                    val target = enemy.copy().apply { tick(2) }.coords
+                    fun isValid(coords: Coordinates) = coords.abs() > sim.planetRadius && coords.abs() < sim.spaceRadius
 
-                    if(target.abs() > sim.planetRadius) {
-                        path = sim.findPath(0, target) ?: System.err.println("NO PATH").let { null }
-                    } else System.err.println("Target out of reach")
+                    var tCoords = target.coords
+                    if(!isValid(tCoords)) {
+                        System.err.println("Target out of reach")
+                    } else {
+                        repeat(5) {
+                            target.tick()
+                            if(isValid(target.coords)) tCoords = target.coords
+                        }
+                        println("Target: ${tCoords}")
+                        path = sim.findPath(0, tCoords) ?: System.err.println("NO PATH").let { null }
+                    }
 
                     sim.tick()
 

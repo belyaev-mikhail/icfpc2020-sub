@@ -74,7 +74,7 @@ class OrbitSim(val planet: Planet, ships: List<GameShip>) {
 
     fun simulateFor(me: Long, ticks: Int): List<MutShip>  = (0..ticks).map {
         this.tick()
-        ships[me]!!
+        ships[me]!!.copy()
     }
 
     fun findPath(me: Long, to: Coordinates): List<MutShip>? {

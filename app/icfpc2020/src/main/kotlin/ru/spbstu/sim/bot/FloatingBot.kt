@@ -72,7 +72,7 @@ class FloatingBot : AbstractBot() {
             val willCrash = futureSteps.any { it.coords in planet }
 
             if (willCrash) {
-                move += gravity(gameShip.position)
+                move += gravity(gameShip.position) * 2
                 System.err.println("Will crash in 5 turns, adding move to $move")
             }
 

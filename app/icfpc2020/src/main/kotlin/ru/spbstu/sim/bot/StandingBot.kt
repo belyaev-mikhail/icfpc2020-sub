@@ -27,7 +27,7 @@ class StandingBot : AbstractBot() {
                 }
 
                 var velocity = gravity(ship.position)
-                velocity += -ship.velocity.capped()
+                velocity += ship.velocity.capped()
                 return listOf(ShipCommand.Accelerate(ship.id, velocity))
             }
 

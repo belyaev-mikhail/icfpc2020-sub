@@ -181,6 +181,7 @@ data class Coordinates(val x: Long, val y: Long) {
 
     fun dist(other: Coordinates) = sqrt(((this.x - other.x).pow(2) + (this.y - other.y).pow(2)).toDouble())
     fun manhattanDist(other: Coordinates) = maxOf(abs(this.x - other.x), abs(this.y - other.y))
+    fun abs(): Long = manhattanDist(Coordinates(0, 0))
 }
 
 data class GameShip(

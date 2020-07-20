@@ -1,9 +1,6 @@
 package ru.spbstu.sim.bot
 
-import ru.spbstu.sim.GameShip
-import ru.spbstu.sim.MapState
-import ru.spbstu.sim.ShipCommand
-import ru.spbstu.sim.ShipState
+import ru.spbstu.sim.*
 
 class ExplodingBot : AbstractBot() {
     override fun initialShipState(mapState: MapState) = ShipState(0, 0, 0, 0)
@@ -39,15 +36,17 @@ class ExplodingBot : AbstractBot() {
     }
 
     private val GameShip.isShrapnel: Boolean get() = this.state.sum() <= 3
-    private fun GameShip.canReach(other: GameShip) = other.position.manhattanDist(this.position) <= this.explosionRadius
+    private fun GameShip.canReach(other: GameShip) = other.nextApproximatePosition.manhattanDist(this.position) <= this.explosionRadius
 
     init {
-        step { gameShip, gameState, mapState, _ ->
+        step { gameShip, gameState, mapState, commands ->
             val enemyShips = gameState.ships.filter { it.role != mapState.role }
+            val ally = gameShip.copy(position = gameShip.nextPosition(commands))
+
             when {
                 gameShip.isShrapnel -> {
                     when {
-                        enemyShips.any { gameShip.canReach(it) } -> listOf(ShipCommand.Detonate(gameShip.id))
+                        enemyShips.any { ally.canReach(it) } -> listOf(ShipCommand.Detonate(gameShip.id))
                         else -> listOf()
                     }
                 }
@@ -55,7 +54,7 @@ class ExplodingBot : AbstractBot() {
                     if (enemyShips.size != 1) return@step listOf()
                     val enemy = enemyShips.first()
                     when {
-                        gameShip.canReach(enemy) && enemy.approximateHealth <= gameShip.explosionDamage -> listOf(ShipCommand.Detonate(gameShip.id))
+                        ally.canReach(enemy) && enemy.approximateHealth <= ally.explosionDamage -> listOf(ShipCommand.Detonate(gameShip.id))
                         else -> listOf()
                     }
                 }

@@ -11,15 +11,15 @@ class FloatingBot : AbstractBot() {
     init {
         step { gameShip, gameState, mapState, list ->
             ++currentTurn
-            if (currentTurn < 2) {
+            if (currentTurn < 5) {
                 when {
                     isAbovePlanet(gameShip.position, mapState.planeRadius) -> {
-                        val gravity = gravity(gameShip.position)
+                        val gravity = -gravity(gameShip.position)
                         val reverseGravity = gravity.swap()
                         listOf(ShipCommand.Accelerate(gameShip.id, reverseGravity * 2 + gravity))
                     }
                     else -> {
-                        val acceleration = gravity(gameShip.position) * 2
+                        val acceleration = -gravity(gameShip.position) * 2
                         listOf(ShipCommand.Accelerate(gameShip.id, acceleration))
                     }
                 }

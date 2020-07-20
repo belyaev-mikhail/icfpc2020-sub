@@ -21,27 +21,6 @@ class ShootingBot(val initialShipState: ShipState, val eps: Double) : AbstractBo
         }
     }
 
-    private val GameShip.nextApproximatePosition: Coordinates
-        get() {
-            var approximatePosition = position
-            approximatePosition += velocity
-            approximatePosition += gravity(position)
-            for (moveCommand in this.commands.filterIsInstance<ShipCommand.Accelerate>()) {
-                approximatePosition += moveCommand.velocity
-            }
-            return approximatePosition
-        }
-
-    private fun GameShip.computeNewPos(commands: List<ShipCommand>): Coordinates {
-        var newPos = position
-        newPos += velocity
-        newPos += gravity(position)
-        for (moveCommand in commands.filterIsInstance<ShipCommand.Accelerate>()) {
-            newPos += moveCommand.velocity
-        }
-        return newPos
-    }
-
     override fun initialShipState(mapState: MapState) = initialShipState
 
     init {
@@ -60,7 +39,7 @@ class ShootingBot(val initialShipState: ShipState, val eps: Double) : AbstractBo
             if (ally.heatLevel + power >= ally.maxHeatingLevel) return@step listOf()
 
 
-            val allyCoordinates = ally.computeNewPos(previousCommands)
+            val allyCoordinates = ally.nextPosition(previousCommands)
 
             val role = mapState.role
             val enemyShip = gameState.ships.filter { it.role != role }.firstOrNull { enemy ->

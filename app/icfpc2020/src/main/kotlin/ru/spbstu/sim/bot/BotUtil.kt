@@ -1,8 +1,6 @@
 package ru.spbstu.sim.bot
 
-import ru.spbstu.sim.Coordinates
-import ru.spbstu.sim.Num
-import ru.spbstu.sim.Symbol
+import ru.spbstu.sim.*
 import kotlin.math.abs
 
 const val ACCELERATION = 1L
@@ -21,4 +19,27 @@ fun gravity(relTo: Coordinates): Coordinates {
 
 fun isAbovePlanet(relTo: Coordinates, planetRadius: Long): Boolean {
     return abs(relTo.x) < planetRadius || abs(relTo.y) < planetRadius
+}
+
+
+val GameShip.nextApproximatePosition: Coordinates
+    get() {
+        var approximatePosition = position
+        approximatePosition += velocity
+        approximatePosition += gravity(position)
+        for (moveCommand in this.commands.filterIsInstance<ShipCommand.Accelerate>()) {
+            approximatePosition += moveCommand.velocity
+        }
+        return approximatePosition
+    }
+
+
+fun GameShip.nextPosition(commands: List<ShipCommand>): Coordinates {
+    var newPos = position
+    newPos += velocity
+    newPos += gravity(position)
+    for (moveCommand in commands.filterIsInstance<ShipCommand.Accelerate>()) {
+        newPos += moveCommand.velocity
+    }
+    return newPos
 }

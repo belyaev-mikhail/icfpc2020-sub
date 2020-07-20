@@ -7,6 +7,8 @@ import ru.spbstu.pow
 import ru.spbstu.protocol.Protocol
 import ru.spbstu.sim.bot.Bot
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.round
 import kotlin.math.sqrt
 
 interface GameRequest {
@@ -183,6 +185,13 @@ data class Coordinates(val x: Long, val y: Long) {
     fun dist(other: Coordinates) = sqrt(((this.x - other.x).pow(2) + (this.y - other.y).pow(2)).toDouble())
     fun manhattanDist(other: Coordinates) = maxOf(abs(this.x - other.x), abs(this.y - other.y))
     fun abs(): Long = manhattanDist(Coordinates(0, 0))
+
+    fun capped(): Coordinates = if (isZero()) this else {
+        val scale = max(abs(x), abs(y)).toFloat()
+        val newX = round(x / scale).toLong()
+        val newY = round(y / scale).toLong()
+        Coordinates(newX, newY)
+    }
 }
 
 data class GameShip(

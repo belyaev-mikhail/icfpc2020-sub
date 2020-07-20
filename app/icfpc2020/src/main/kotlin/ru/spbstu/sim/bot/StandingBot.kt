@@ -20,8 +20,15 @@ class StandingBot : AbstractBot() {
         step { ship, state, map, _ ->
 
             fun default(): List<ShipCommand> {
-                val velocity = gravity(ship.position)
-                return listOf(ShipCommand.Accelerate(ship.id, velocity + velocity.randomVector))
+                if (ship.velocity.abs() <= 1) {
+                    var velocity = gravity(ship.position)
+                    velocity += velocity.randomVector
+                    return listOf(ShipCommand.Accelerate(ship.id, velocity))
+                }
+
+                var velocity = gravity(ship.position)
+                velocity += -ship.velocity.capped()
+                return listOf(ShipCommand.Accelerate(ship.id, velocity))
             }
 
             fun acceleration(from: MutShip, to: MutShip) =

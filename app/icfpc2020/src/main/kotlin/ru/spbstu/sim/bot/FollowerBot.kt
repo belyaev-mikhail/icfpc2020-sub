@@ -36,7 +36,7 @@ class FollowerBot : AbstractBot() {
 
             when {
                 accel.isZero() -> listOf(default)
-                else -> listOf(ShipCommand.Accelerate(ship.id, accel))
+                else -> listOf(ShipCommand.Accelerate(ship.id, -accel))
             }
         }
     }

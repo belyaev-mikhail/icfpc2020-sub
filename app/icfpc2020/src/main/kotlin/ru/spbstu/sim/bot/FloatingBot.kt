@@ -61,7 +61,7 @@ class FloatingBot : AbstractBot() {
             val currentTurn = gameState.tick.toInt()
             val section = gameShip.position.getSection(mapState)
 
-            if (currentTurn == 1) {
+            if (currentTurn == 0) {
                 move = -gameShip.position.getFlightDirection(section)
             }
 
